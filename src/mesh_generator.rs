@@ -57,7 +57,28 @@ fn generate_arc(start: Vec2, end: Vec2, tangent: Vec2) -> (Vec<Vec3>, Vec<Vec3>,
     let mut normals: Vec<Vec3> = Vec::with_capacity(DETAIL * 2);
     let mut indices: Vec<u32> = Vec::with_capacity(DETAIL * 6);
 
+    // calculate the center point of the arc
     let center = calculate_center(start, end, tangent);
+    // calculate radius of the arc
+    let radius = (end - center).length();
+    // Calculate the angle of the arc
+    let angle = (end - center).length() / radius;
+    // Calculate the angle increment for each segment
+    let angle_inc = angle / segments as f32;
+    // Calculate the initial rotation angle
+    let angle_start = tangent.angle_between(end - start);
+
+    let mut current_angle = angle_start;
+    for _ in 0..segments {
+        // Calculate the position of the vertex using the current angle
+        let x = center.x + radius * current_angle.cos();
+        let y = center.y + radius * current_angle.sin();
+        let position = Vec3::new(x, y, 0.0);
+        // Add the vertex to the list of vertices
+        vertices.push(position);
+        // Rotate the angle by the angle increment
+        current_angle += angle_inc;
+    }
 
     (vertices, normals, indices)
 }
