@@ -41,6 +41,8 @@ fn calculate_center(start: Vec2, end: Vec2, normal: Vec2) -> (Vec2, f32) {
     let angle = normal.angle_between(end - start);
     let radius = base / angle.cos();
     let center = start + normal * radius;
+    println!("s = ({}, {})", start.x, start.y);
+    println!("r = ({},{})", end.x, end.y);
     println!("c = ({}, {})", center.x, center.y);
 
     (center, radius)
@@ -53,20 +55,19 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, 
 
     // Calculate the center point of the arc
     let (center, radius) = calculate_center(start, end, normal);
-    let angle_start = (center - start).angle_between(center);
-    let angle_end = (center - end).angle_between(center);
+    let angle_start = (start - center).angle_between(center);
+    let angle_end = (end - center).angle_between(center);
     let angle_diff = angle_end - angle_start;
     let angle_step = angle_diff / (DETAIL - 1) as f32;
 
     for i in 0..DETAIL {
-        let angle = angle_start + angle_step * i as f32;
-
-        let test = generate_point_on_circle(center, radius, angle);
-        println!("({},{})", test.x, test.z);
+        let angle = angle_start - angle_step * i as f32;
 
         // Calculate the position of the vertex using the current angle
         let inner_point = generate_point_on_circle(center, radius + THICKNESS, angle);
         let outer_point = generate_point_on_circle(center, radius - THICKNESS, angle);
+        println!("({},{})", inner_point.x, inner_point.z);
+        println!("({},{})", outer_point.x, outer_point.z);
 
         // Add the vertex to the list of vertices
         vertices.push(inner_point);
