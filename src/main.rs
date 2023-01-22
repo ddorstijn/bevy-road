@@ -42,7 +42,7 @@ fn setup_scene(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut wireframe_config: ResMut<WireframeConfig>,
 ) {
-    wireframe_config.global = true;
+    wireframe_config.global = false;
 
     let translation = Vec3::new(-2.0, 2.5, 5.0);
     let radius = translation.length();
@@ -80,22 +80,22 @@ fn setup_scene(
         .with_children(|parent| {
             parent
                 .spawn(PbrBundle {
-                    material: materials.add(Color::rgb(1., 0., 0.).into()),
-                    mesh: meshes.add(Mesh::from(shape::Cube { size: 0.5 })),
+                    material: materials.add(Color::rgb(1., 0., 1.).into()),
+                    mesh: meshes.add(Mesh::from(shape::Cube { size: 0.15 })),
                     ..default()
                 })
                 .insert(Name::new("Center"));
             parent
                 .spawn(PbrBundle {
                     material: materials.add(Color::rgb(0., 1., 0.).into()),
-                    mesh: meshes.add(Mesh::from(shape::Cube { size: 0.5 })),
+                    mesh: meshes.add(Mesh::from(shape::Cube { size: 0.25 })),
                     ..default()
                 })
                 .insert(Name::new("Start"));
             parent
                 .spawn(PbrBundle {
-                    material: materials.add(Color::rgb(0., 0., 1.).into()),
-                    mesh: meshes.add(Mesh::from(shape::Cube { size: 0.5 })),
+                    material: materials.add(Color::rgb(1., 0., 0.).into()),
+                    mesh: meshes.add(Mesh::from(shape::Cube { size: 0.25 })),
                     ..default()
                 })
                 .insert(Name::new("End"));
