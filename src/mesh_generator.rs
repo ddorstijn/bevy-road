@@ -41,9 +41,6 @@ fn calculate_center(start: Vec2, end: Vec2, normal: Vec2) -> (Vec2, f32) {
     let angle = normal.angle_between(end - start);
     let radius = base / angle.cos();
     let center = start + normal * radius;
-    println!("s = ({}, {})", start.x, start.y);
-    println!("r = ({},{})", end.x, end.y);
-    println!("c = ({}, {})", center.x, center.y);
 
     (center, radius)
 }
@@ -66,8 +63,6 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, 
         // Calculate the position of the vertex using the current angle
         let inner_point = generate_point_on_circle(center, radius + THICKNESS, angle);
         let outer_point = generate_point_on_circle(center, radius - THICKNESS, angle);
-        println!("({},{})", inner_point.x, inner_point.z);
-        println!("({},{})", outer_point.x, outer_point.z);
 
         // Add the vertex to the list of vertices
         vertices.push(inner_point);
@@ -77,7 +72,7 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, 
         normals.push(Vec3::Y);
 
         if i < DETAIL - 1 {
-            let bl = i as u32;
+            let bl = 2 * i as u32;
             let br = bl + 1;
             let tr = bl + 3;
             let tl = bl + 2;
@@ -85,6 +80,33 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, 
             indices.append(&mut vec![bl, tl, tr, bl, tr, br]);
         }
     }
+
+    (vertices, normals, indices)
+}
+
+fn generate_line(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, Vec<u32>) {
+    let mut vertices: Vec<Vec3> = Vec::with_capacity(4);
+    let mut normals: Vec<Vec3> = Vec::with_capacity(4);
+    let mut indices: Vec<u32> = Vec::with_capacity(6);
+
+    let p_bl = start - normal * THICKNESS;
+    let pos_bl = Vec3::new(p_bl.x, 0.0, p_bl.y);
+    let p_br = start + normal * THICKNESS;
+    let pos_br = Vec3::new(p_br.x, 0.0, p_br.y);
+    let p_tl = end - normal * THICKNESS;
+    let pos_tl = Vec3::new(p_tl.x, 0.0, p_tl.y);
+    let p_tr = end + normal * THICKNESS;
+    let pos_tr = Vec3::new(p_tr.x, 0.0, p_tr.y);
+
+    vertices.append(&mut vec![pos_bl, pos_br, pos_tl, pos_tr]);
+    normals.append(&mut vec![Vec3::Y; 4]);
+
+    let bl = 0;
+    let br = bl + 1;
+    let tr = bl + 3;
+    let tl = bl + 2;
+
+    indices.append(&mut vec![bl, tl, tr, bl, tr, br]);
 
     (vertices, normals, indices)
 }
@@ -110,33 +132,6 @@ pub fn generate_segment(s: &mut RoadSegment) -> Mesh {
     mesh.set_indices(Some(mesh::Indices::U32(indices)));
 
     mesh
-}
-
-fn generate_line(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, Vec<u32>) {
-    let mut vertices: Vec<Vec3> = Vec::with_capacity(4);
-    let mut normals: Vec<Vec3> = Vec::with_capacity(4);
-    let mut indices: Vec<u32> = Vec::with_capacity(6);
-
-    let p_bl = start + normal * THICKNESS;
-    let pos_bl = Vec3::new(p_bl.x, 0.0, p_bl.y);
-    let p_br = start - normal * THICKNESS;
-    let pos_br = Vec3::new(p_br.x, 0.0, p_br.y);
-    let p_tl = end + normal * THICKNESS;
-    let pos_tl = Vec3::new(p_tl.x, 0.0, p_tl.y);
-    let p_tr = end - normal * THICKNESS;
-    let pos_tr = Vec3::new(p_tr.x, 0.0, p_tr.y);
-
-    vertices.append(&mut vec![pos_bl, pos_br, pos_tl, pos_tr]);
-    normals.append(&mut vec![Vec3::Y; 4]);
-
-    let bl = 0;
-    let br = bl + 1;
-    let tr = bl + 3;
-    let tl = bl + 2;
-
-    indices.append(&mut vec![bl, tl, tr, bl, tr, br]);
-
-    (vertices, normals, indices)
 }
 
 pub fn update_dirty(
