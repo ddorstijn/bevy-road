@@ -70,11 +70,6 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, 
 
     let arc_length = angle_diff * radius;
     let num_points = (arc_length * DETAIL as f32).abs().ceil() as usize;
-    println!(
-        "angle = {}, num_points = {}",
-        normal.perp().angle_between(end - start).abs(),
-        num_points
-    );
     let angle_step = angle_diff / (num_points - 1) as f32;
 
     for i in 0..num_points {
