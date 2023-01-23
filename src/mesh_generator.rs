@@ -27,8 +27,20 @@ impl Default for RoadSegment {
     }
 }
 
-const DETAIL: usize = 10;
+const DETAIL: usize = 5;
 const THICKNESS: f32 = 0.25;
+
+fn is_straight(angle: f32) -> bool {
+    // The tolerance for how close the angle should be to a full circle
+    let tolerance = 0.05;
+
+    // Check if the angle is zero
+    if angle.abs() < tolerance {
+        return true;
+    }
+    // Calculate the difference between the angle and a half circle
+    (angle.abs() - std::f32::consts::PI).abs() < tolerance
+}
 
 fn generate_point_on_circle(center: Vec2, radius: f32, angle: f32) -> Vec3 {
     let x = center.x + angle.cos() * radius;
@@ -55,9 +67,17 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, 
     let angle_start = (start - center).angle_between(center);
     let angle_end = (end - center).angle_between(center);
     let angle_diff = angle_end - angle_start;
-    let angle_step = angle_diff / (DETAIL - 1) as f32;
 
-    for i in 0..DETAIL {
+    let arc_length = angle_diff * radius;
+    let num_points = (arc_length * DETAIL as f32).abs().ceil() as usize;
+    println!(
+        "angle = {}, num_points = {}",
+        normal.perp().angle_between(end - start).abs(),
+        num_points
+    );
+    let angle_step = angle_diff / (num_points - 1) as f32;
+
+    for i in 0..num_points {
         let angle = angle_start - angle_step * i as f32;
 
         // Calculate the position of the vertex using the current angle
@@ -71,7 +91,7 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, 
         normals.push(Vec3::Y);
         normals.push(Vec3::Y);
 
-        if i < DETAIL - 1 {
+        if i < num_points - 1 {
             let bl = 2 * i as u32;
             let br = bl + 1;
             let tr = bl + 3;
@@ -115,7 +135,11 @@ pub fn generate_segment(s: &mut RoadSegment) -> Mesh {
     let start = Vec2::new(s.start.x, s.start.z);
     let end = Vec2::new(s.end.x, s.end.z);
 
-    s.road_type = match s.tangent.angle_between(end - start).abs() < 0.005 {
+    if (end - start).length() == 0. {
+        // TODO: throw error
+    }
+
+    s.road_type = match is_straight(s.tangent.angle_between(end - start)) {
         true => SegmentType::Line,
         false => SegmentType::Arc,
     };
