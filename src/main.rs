@@ -1,4 +1,8 @@
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    reflect::TypeUuid,
+    render::render_resource::{AsBindGroup, ShaderRef},
+};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 pub mod flycam;
@@ -11,6 +15,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(WorldInspectorPlugin)
+        .add_plugin(MaterialPlugin::<CustomMaterial>::default())
         .add_plugin(GamePlugin)
         .run();
 }
@@ -22,7 +27,8 @@ impl Plugin for GamePlugin {
         app.register_type::<RoadSegment>()
             .add_startup_system(setup_scene)
             .add_system(pan_orbit_camera)
-            .add_system(regenerate_mesh);
+            .add_system(regenerate_mesh)
+            .add_system(update_mouse);
     }
 }
 
@@ -30,6 +36,7 @@ fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut c_materials: ResMut<Assets<CustomMaterial>>,
 ) {
     let translation = Vec3::new(-2.0, 2.5, 5.0);
     let radius = translation.length();
@@ -99,4 +106,44 @@ fn setup_scene(
             ..default()
         })
         .insert(Name::new("Ground"));
+
+    commands.spawn(MaterialMeshBundle {
+        mesh: meshes.add(Mesh::from(shape::Plane { size: 1.0 })),
+        transform: Transform::from_xyz(0.0, 0.5, 0.0),
+        material: c_materials.add(CustomMaterial {
+            mouse_position: Vec2::new(1.0, 0.0),
+            alpha_mode: AlphaMode::Blend,
+        }),
+        ..default()
+    });
+}
+
+/// The Material trait is very configurable, but comes with sensible defaults for all methods.
+/// You only need to implement functions for features that need non-default behavior. See the Material api docs for details!
+impl Material for CustomMaterial {
+    fn fragment_shader() -> ShaderRef {
+        "shaders/material.wgsl".into()
+    }
+
+    fn alpha_mode(&self) -> AlphaMode {
+        self.alpha_mode
+    }
+}
+
+// This is the struct that will be passed to your shader
+#[derive(AsBindGroup, TypeUuid, Debug, Clone)]
+#[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
+pub struct CustomMaterial {
+    #[uniform(0)]
+    mouse_position: Vec2,
+    alpha_mode: AlphaMode,
+}
+
+fn update_mouse(
+    query: Query<&mut Handle<CustomMaterial>>,
+    mut c_materials: ResMut<Assets<CustomMaterial>>,
+) {
+    for handle in query.iter() {
+        c_materials.get_mut(handle).unwrap().mouse_position += 0.001;
+    }
 }
