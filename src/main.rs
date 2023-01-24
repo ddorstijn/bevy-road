@@ -5,7 +5,7 @@ pub mod flycam;
 use flycam::{pan_orbit_camera, PanOrbitCamera};
 
 pub mod mesh_generator;
-use mesh_generator::{update_dirty, RoadEnd, RoadSegment};
+use mesh_generator::{regenerate_mesh, RoadEnd, RoadSegment};
 
 fn main() {
     App::new()
@@ -22,7 +22,7 @@ impl Plugin for GamePlugin {
         app.register_type::<RoadSegment>()
             .add_startup_system(setup_scene)
             .add_system(pan_orbit_camera)
-            .add_system(update_dirty);
+            .add_system(regenerate_mesh);
     }
 }
 

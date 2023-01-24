@@ -27,28 +27,64 @@ impl Default for RoadSegment {
     }
 }
 
+impl RoadSegment {
+    pub fn generate_segment(self: &mut Self) -> Mesh {
+        let start = Vec2::new(self.start.x, self.start.z);
+        let end = Vec2::new(self.end.x, self.end.z);
+
+        if (end - start).length() == 0. {
+            // TODO: throw error
+            panic!("Length of the road is 0");
+        }
+
+        self.road_type = match is_straight(self.tangent.angle_between(end - start)) {
+            true => SegmentType::Line,
+            false => SegmentType::Arc,
+        };
+
+        let arc = match self.road_type {
+            SegmentType::Line => generate_line(start, end, -1. * self.tangent.perp(), THICKNESS),
+            SegmentType::Arc => generate_arc(start, end, -1. * self.tangent.perp(), THICKNESS),
+        };
+
+        generate_model(arc)
+    }
+}
+
 #[derive(Component, Reflect)]
 pub struct RoadEnd;
 
+pub fn regenerate_mesh(
+    mut segments: Query<(&mut Handle<Mesh>, &mut RoadSegment, &Children), Changed<RoadSegment>>,
+    mut gizmos: Query<(&mut Transform, With<RoadEnd>)>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    for (mut mesh, mut segment, children) in &mut segments {
+        *mesh = meshes.add(segment.generate_segment());
+
+        for &child in children.iter() {
+            let (mut transform, _) = gizmos
+                .get_mut(child)
+                .expect("No child with component of type RoadEnd");
+            transform.translation = segment.end;
+        }
+    }
+}
+
 const DETAIL: usize = 5;
+const TOLERANCE: f32 = 0.05;
 const THICKNESS: f32 = 0.25;
 
 fn is_straight(angle: f32) -> bool {
-    // The tolerance for how close the angle should be to a full circle
-    let tolerance = 0.05;
-
-    // Check if the angle is zero
-    if angle.abs() < tolerance {
-        return true;
-    }
     // Calculate the difference between the angle and a half circle
-    (angle.abs() - std::f32::consts::PI).abs() < tolerance
+    angle.abs() < TOLERANCE || (angle.abs() - std::f32::consts::PI).abs() < TOLERANCE
 }
 
-fn generate_point_on_circle(center: Vec2, radius: f32, angle: f32) -> Vec3 {
+fn generate_point_on_circle(center: Vec2, radius: f32, angle: f32) -> Vec2 {
     let x = center.x + angle.cos() * radius;
     let y = center.y + angle.sin() * radius;
-    Vec3::new(x, 0.0, y)
+
+    Vec2::new(x, y)
 }
 
 fn calculate_center(start: Vec2, end: Vec2, normal: Vec2) -> (Vec2, f32) {
@@ -60,13 +96,10 @@ fn calculate_center(start: Vec2, end: Vec2, normal: Vec2) -> (Vec2, f32) {
     (center, radius)
 }
 
-fn generate_arc(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, Vec<u32>) {
-    let mut vertices: Vec<Vec3> = Vec::with_capacity(DETAIL * 2);
-    let mut normals: Vec<Vec3> = Vec::with_capacity(DETAIL * 2);
-    let mut indices: Vec<u32> = Vec::with_capacity(DETAIL * 6);
-
+fn generate_arc(start: Vec2, end: Vec2, normal: Vec2, thickness: f32) -> Vec<Vec2> {
     // Calculate the center point of the arc
     let (center, radius) = calculate_center(start, end, normal);
+
     let angle_start = (start - center).angle_between(center);
     let angle_end = (end - center).angle_between(center);
     let angle_diff = angle_end - angle_start;
@@ -75,101 +108,47 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, 
     let num_points = (arc_length * DETAIL as f32).abs().ceil() as usize;
     let angle_step = angle_diff / (num_points - 1) as f32;
 
-    for i in 0..num_points {
-        let angle = angle_start - angle_step * i as f32;
+    (0..num_points)
+        .map(|i| {
+            let angle = angle_start - angle_step * i as f32;
+            // Calculate the position of the vertex using the current angle
+            let inner_point = generate_point_on_circle(center, radius + thickness, angle);
+            let outer_point = generate_point_on_circle(center, radius - thickness, angle);
 
-        // Calculate the position of the vertex using the current angle
-        let inner_point = generate_point_on_circle(center, radius + THICKNESS, angle);
-        let outer_point = generate_point_on_circle(center, radius - THICKNESS, angle);
-
-        // Add the vertex to the list of vertices
-        vertices.push(inner_point);
-        vertices.push(outer_point);
-
-        normals.push(Vec3::Y);
-        normals.push(Vec3::Y);
-
-        if i < num_points - 1 {
-            let bl = 2 * i as u32;
-            let br = bl + 1;
-            let tr = bl + 3;
-            let tl = bl + 2;
-
-            indices.append(&mut vec![bl, tl, tr, bl, tr, br]);
-        }
-    }
-
-    (vertices, normals, indices)
+            [inner_point, outer_point]
+        })
+        .flatten()
+        .collect()
 }
 
-fn generate_line(start: Vec2, end: Vec2, normal: Vec2) -> (Vec<Vec3>, Vec<Vec3>, Vec<u32>) {
-    let mut vertices: Vec<Vec3> = Vec::with_capacity(4);
-    let mut normals: Vec<Vec3> = Vec::with_capacity(4);
-    let mut indices: Vec<u32> = Vec::with_capacity(6);
+fn generate_line(start: Vec2, end: Vec2, normal: Vec2, thickness: f32) -> Vec<Vec2> {
+    let p_bl = start - normal * thickness;
+    let p_br = start + normal * thickness;
+    let p_tl = end - normal * thickness;
+    let p_tr = end + normal * thickness;
 
-    let p_bl = start - normal * THICKNESS;
-    let pos_bl = Vec3::new(p_bl.x, 0.0, p_bl.y);
-    let p_br = start + normal * THICKNESS;
-    let pos_br = Vec3::new(p_br.x, 0.0, p_br.y);
-    let p_tl = end - normal * THICKNESS;
-    let pos_tl = Vec3::new(p_tl.x, 0.0, p_tl.y);
-    let p_tr = end + normal * THICKNESS;
-    let pos_tr = Vec3::new(p_tr.x, 0.0, p_tr.y);
-
-    vertices.append(&mut vec![pos_bl, pos_br, pos_tl, pos_tr]);
-    normals.append(&mut vec![Vec3::Y; 4]);
-
-    let bl = 0;
-    let br = bl + 1;
-    let tr = bl + 3;
-    let tl = bl + 2;
-
-    indices.append(&mut vec![bl, tl, tr, bl, tr, br]);
-
-    (vertices, normals, indices)
+    vec![p_bl, p_br, p_tl, p_tr]
 }
 
-pub fn generate_segment(s: &mut RoadSegment) -> Mesh {
-    let start = Vec2::new(s.start.x, s.start.z);
-    let end = Vec2::new(s.end.x, s.end.z);
+fn generate_model(arc: Vec<Vec2>) -> Mesh {
+    let vertices: Vec<Vec3> = arc.iter().map(|a| Vec3::new(a.x, 0.0, a.y)).collect();
+    let normals: Vec<Vec3> = arc.iter().map(|_| Vec3::Y).collect();
 
-    if (end - start).length() == 0. {
-        // TODO: throw error
-        panic!("Length of the road is 0");
+    let levels = arc.len() / 2 - 1;
+    let mut indices: Vec<u32> = Vec::with_capacity(levels * 6);
+    for t in 0..levels {
+        let bl = 2 * t as u32;
+        let br = bl + 1;
+        let tr = bl + 3;
+        let tl = bl + 2;
+
+        indices.append(&mut vec![bl, tl, tr, bl, tr, br]);
     }
-
-    s.road_type = match is_straight(s.tangent.angle_between(end - start)) {
-        true => SegmentType::Line,
-        false => SegmentType::Arc,
-    };
-
-    let (vertices, normals, indices) = match s.road_type {
-        SegmentType::Line => generate_line(start, end, -1. * s.tangent.perp()),
-        SegmentType::Arc => generate_arc(start, end, -1. * s.tangent.perp()),
-    };
 
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.set_indices(Some(mesh::Indices::U32(indices)));
 
     mesh
-}
-
-pub fn update_dirty(
-    mut segments: Query<(&mut Handle<Mesh>, &mut RoadSegment, &Children), Changed<RoadSegment>>,
-    mut gizmos: Query<(&mut Transform, With<RoadEnd>)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-) {
-    for (mut mesh, mut segment, children) in &mut segments {
-        *mesh = meshes.add(generate_segment(&mut segment));
-
-        for &child in children.iter() {
-            let (mut transform, _) = gizmos
-                .get_mut(child)
-                .expect("No child with component of type RoadEnd");
-            transform.translation = segment.end;
-        }
-    }
 }
