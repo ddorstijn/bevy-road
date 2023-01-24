@@ -4,8 +4,8 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 pub mod flycam;
 use flycam::{pan_orbit_camera, PanOrbitCamera};
 
-pub mod mesh_generator;
-use mesh_generator::{regenerate_mesh, RoadEnd, RoadSegment};
+pub mod road;
+use road::{regenerate_mesh, RoadEnd, RoadSegment};
 
 fn main() {
     App::new()
