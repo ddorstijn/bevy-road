@@ -27,6 +27,9 @@ impl Default for RoadSegment {
     }
 }
 
+#[derive(Component, Reflect)]
+pub struct RoadEnd;
+
 const DETAIL: usize = 5;
 const THICKNESS: f32 = 0.25;
 
@@ -132,6 +135,7 @@ pub fn generate_segment(s: &mut RoadSegment) -> Mesh {
 
     if (end - start).length() == 0. {
         // TODO: throw error
+        panic!("Length of the road is 0");
     }
 
     s.road_type = match is_straight(s.tangent.angle_between(end - start)) {
@@ -155,31 +159,17 @@ pub fn generate_segment(s: &mut RoadSegment) -> Mesh {
 
 pub fn update_dirty(
     mut segments: Query<(&mut Handle<Mesh>, &mut RoadSegment, &Children), Changed<RoadSegment>>,
-    mut gizmos: Query<(&mut Transform, &Name)>,
+    mut gizmos: Query<(&mut Transform, With<RoadEnd>)>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (mut mesh, mut segment, children) in &mut segments {
         *mesh = meshes.add(generate_segment(&mut segment));
 
         for &child in children.iter() {
-            let (mut transform, name) = gizmos.get_mut(child).unwrap();
-            match name.as_str() {
-                "Center" => {
-                    let start = Vec2::new(segment.start.x, segment.start.z);
-                    let end = Vec2::new(segment.end.x, segment.end.z);
-                    let (center, _) = calculate_center(start, end, -1. * segment.tangent.perp());
-                    transform.translation = Vec3::new(center.x, 0.0, center.y);
-                }
-                "Start" => {
-                    transform.translation = segment.start;
-                }
-                "End" => {
-                    transform.translation = segment.end;
-                }
-                _ => {
-                    println!("Not found");
-                }
-            }
+            let (mut transform, _) = gizmos
+                .get_mut(child)
+                .expect("No child with component of type RoadEnd");
+            transform.translation = segment.end;
         }
     }
 }

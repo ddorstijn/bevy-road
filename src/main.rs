@@ -5,15 +5,14 @@ use bevy::{
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::{
-    DebugCursorPickingPlugin, DebugEventsPickingPlugin, DefaultPickingPlugins, PickableBundle,
-    PickingCameraBundle,
+    DebugCursorPickingPlugin, DefaultPickingPlugins, PickableBundle, PickingCameraBundle,
 };
 
 pub mod flycam;
 use flycam::{pan_orbit_camera, PanOrbitCamera};
 
 pub mod mesh_generator;
-use mesh_generator::{update_dirty, RoadSegment};
+use mesh_generator::{update_dirty, RoadEnd, RoadSegment};
 
 fn main() {
     App::new()
@@ -24,7 +23,6 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(DefaultPickingPlugins)
         .add_plugin(DebugCursorPickingPlugin) // <- Adds the debug cursor (optional)
-        .add_plugin(DebugEventsPickingPlugin) // <- Adds debug event logging (optional)
         .add_plugin(WireframePlugin)
         .add_plugin(WorldInspectorPlugin)
         .add_plugin(GamePlugin)
@@ -106,20 +104,13 @@ fn setup_scene(
             parent
                 .spawn((
                     PbrBundle {
-                        material: materials.add(Color::rgb(0., 1., 0.).into()),
+                        material: materials.add(Color::rgb(1., 0., 0.).into()),
                         mesh: meshes.add(Mesh::from(shape::Cube { size: 0.25 })),
                         ..default()
                     },
                     PickableBundle::default(),
                 ))
-                .insert(Name::new("Start"));
-            parent
-                .spawn(PbrBundle {
-                    material: materials.add(Color::rgb(1., 0., 0.).into()),
-                    mesh: meshes.add(Mesh::from(shape::Cube { size: 0.25 })),
-                    ..default()
-                })
-                .insert(Name::new("End"));
+                .insert(RoadEnd);
         });
 
     commands
@@ -128,5 +119,6 @@ fn setup_scene(
             mesh: meshes.add(Mesh::from(shape::Plane { size: 20. })),
             ..default()
         })
+        .insert(PickableBundle::default())
         .insert(Name::new("Ground"));
 }
