@@ -1,12 +1,5 @@
 use bevy::prelude::*;
-use bevy::{
-    pbr::wireframe::{WireframeConfig, WireframePlugin},
-    render::{render_resource::WgpuFeatures, settings::WgpuSettings},
-};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_mod_picking::{
-    DebugCursorPickingPlugin, DefaultPickingPlugins, PickableBundle, PickingCameraBundle,
-};
 
 pub mod flycam;
 use flycam::{pan_orbit_camera, PanOrbitCamera};
@@ -16,14 +9,7 @@ use mesh_generator::{update_dirty, RoadEnd, RoadSegment};
 
 fn main() {
     App::new()
-        .insert_resource(WgpuSettings {
-            features: WgpuFeatures::POLYGON_MODE_LINE,
-            ..default()
-        })
         .add_plugins(DefaultPlugins)
-        .add_plugins(DefaultPickingPlugins)
-        .add_plugin(DebugCursorPickingPlugin) // <- Adds the debug cursor (optional)
-        .add_plugin(WireframePlugin)
         .add_plugin(WorldInspectorPlugin)
         .add_plugin(GamePlugin)
         .run();
@@ -44,10 +30,7 @@ fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut wireframe_config: ResMut<WireframeConfig>,
 ) {
-    wireframe_config.global = false;
-
     let translation = Vec3::new(-2.0, 2.5, 5.0);
     let radius = translation.length();
 
@@ -60,7 +43,6 @@ fn setup_scene(
             radius,
             ..Default::default()
         })
-        .insert(PickingCameraBundle::default())
         .insert(Name::new("Player"));
 
     const HALF_SIZE: f32 = 10.0;
@@ -102,14 +84,11 @@ fn setup_scene(
         .insert(Name::new("Piecewise Road"))
         .with_children(|parent| {
             parent
-                .spawn((
-                    PbrBundle {
-                        material: materials.add(Color::rgb(1., 0., 0.).into()),
-                        mesh: meshes.add(Mesh::from(shape::Cube { size: 0.25 })),
-                        ..default()
-                    },
-                    PickableBundle::default(),
-                ))
+                .spawn(PbrBundle {
+                    material: materials.add(Color::rgb(1., 0., 0.).into()),
+                    mesh: meshes.add(Mesh::from(shape::Cube { size: 0.25 })),
+                    ..default()
+                })
                 .insert(RoadEnd);
         });
 
@@ -119,6 +98,5 @@ fn setup_scene(
             mesh: meshes.add(Mesh::from(shape::Plane { size: 20. })),
             ..default()
         })
-        .insert(PickableBundle::default())
         .insert(Name::new("Ground"));
 }
