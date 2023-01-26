@@ -25,7 +25,7 @@ struct Circle {
 };
 
 fn angle_between(v1: vec2<f32>, v2: vec2<f32>) -> f32 {
-    return atan2(v2.y * v1.x - v2.x * v1.y, v2.x * v1.x + v2.y * v1.y);
+    return atan2(v1.y, v1.x) - atan2(v2.y, v2.x);
 }
 
 fn get_circle(start: vec2<f32>, end: vec2<f32>, normal: vec2<f32>) -> Circle {
@@ -34,20 +34,22 @@ fn get_circle(start: vec2<f32>, end: vec2<f32>, normal: vec2<f32>) -> Circle {
     let radius = base / cos(angle);
     let center = start + normal * radius;
 
-    return Circle(center, radius);
+    return Circle(center, abs(radius));
 }
 
 fn generate_arc(circle: Circle, startAngle: f32, endAngle: f32, coord: vec2<f32>) -> vec4<f32> {
     let vColor = vec4<f32>(1.0, 0.0, 0.0, 1.0);
     let innerRadius = circle.radius - thickness;
     let outerRadius = circle.radius + thickness;
-    
-	let dist = distance(coord, circle.center);
+
+    let dir = circle.center - coord;
+	let dist = length(dir);
+
 	let inner = smoothstep(innerRadius, innerRadius + smoothness, dist);
 	let outer = smoothstep(outerRadius, outerRadius - smoothness, dist);
 	let bandAlpha = inner * outer;
     
-    let angle = atan2(coord.y - circle.center.y, coord.x - circle.center.x) + PI;
+    let angle = atan2(dir.y, dir.x) + PI;
     let startEdge = smoothstep(angle, angle - smoothness, startAngle);
     let endEdge = smoothstep(angle, angle + smoothness, endAngle);
     let angleAlpha = startEdge * endEdge;
@@ -59,10 +61,10 @@ fn generate_arc(circle: Circle, startAngle: f32, endAngle: f32, coord: vec2<f32>
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let normal = vec2<f32>(tangent.y, -tangent.x);
     let circle = get_circle(start, end, normal);
-    let c = Circle(vec2<f32>(0.6, 0.4), 1.);
-    let angle_start = angle_between(start, c.center);
-    let angle_end = angle_between(end, c.center);
+    let angle_start = angle_between(circle.center - start, circle.center);
+    let angle_end = angle_between(circle.center - end, circle.center);
 
-    return generate_arc(c, 0.0 * PI, 0.9 * PI, in.world_position.xz);
-    // return generate_arc(circle, angle_start, angle_end, in.uv);
+    let t1 = 0.0 * PI;
+    let t2 = 2.0 * PI;
+    return generate_arc(circle, min(angle_start, angle_end), max(angle_start, angle_end), in.world_position.xz);
 }

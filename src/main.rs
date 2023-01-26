@@ -70,6 +70,23 @@ fn update_raycast_with_cursor(
     }
 }
 
+struct Circle {
+    center: Vec2,
+    radius: f32,
+}
+
+fn get_circle(start: Vec2, end: Vec2, normal: Vec2) -> Circle {
+    let base = start.distance(end) / 2.0;
+    let angle = normal.angle_between(end - start);
+    let radius = base / angle.cos();
+    let center = start + normal * radius;
+
+    return Circle {
+        center: center,
+        radius: radius.abs(),
+    };
+}
+
 fn update_debug_cursor(
     mut materials: ResMut<Assets<CustomMaterial>>,
     cursors: Query<&Intersection<MyRaycastSet>>,
@@ -82,6 +99,15 @@ fn update_debug_cursor(
     };
     if let Some(new_matrix) = intersection.normal_ray() {
         let coord = Transform::from_matrix(new_matrix.to_transform()).translation;
+
+        let start = Vec2::ZERO;
+        let end = Vec2::new(coord.x, coord.z);
+        let normal = Vec2::new(0.0, 1.0).perp();
+        let circle = get_circle(start, end, normal);
+        let angle_start = (circle.center - start).angle_between(circle.center);
+        let angle_end = (circle.center - end).angle_between(circle.center);
+
+        println!("Angle start: {}, angle_end: {}", angle_start, angle_end);
         for handle in &road {
             materials.get_mut(handle).unwrap().end = Vec2::new(coord.x, coord.z);
         }
@@ -161,6 +187,7 @@ fn setup_scene(
         .spawn(PbrBundle {
             material: materials.add(Color::rgb(0.0, 0.1, 0.0).into()),
             mesh: meshes.add(Mesh::from(shape::Plane { size: 20. })),
+            transform: Transform::from_xyz(0.0, -0.1, 0.0),
             ..default()
         })
         .insert(Name::new("Ground"))
@@ -168,7 +195,7 @@ fn setup_scene(
 
     commands.spawn(MaterialMeshBundle {
         mesh: meshes.add(Mesh::from(shape::Plane { size: 1.0 })),
-        transform: Transform::from_xyz(0.0, 0.5, 0.0),
+        transform: Transform::from_scale(Vec3::new(50.0, 1.0, 50.0)),
         material: c_materials.add(CustomMaterial::default()),
         ..default()
     });
