@@ -17,7 +17,10 @@ use road::{regenerate_mesh, RoadEnd, RoadSegment};
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(AssetPlugin {
+            watch_for_changes: true,
+            ..Default::default()
+        }))
         .add_plugin(WorldInspectorPlugin)
         .add_plugin(MaterialPlugin::<CustomMaterial>::default())
         .add_plugin(DefaultRaycastingPlugin::<MyRaycastSet>::default())
@@ -35,10 +38,15 @@ impl Plugin for GamePlugin {
                 update_raycast_with_cursor.before(RaycastSystem::BuildRays::<MyRaycastSet>),
             )
             .add_startup_system(setup_scene)
+            .add_startup_system(test_system)
             .add_system(pan_orbit_camera)
             .add_system(regenerate_mesh)
             .add_system(update_debug_cursor);
     }
+}
+
+fn test_system() {
+    return;
 }
 
 /// This is a unit struct we will use to mark our generic `RaycastMesh`s and `RaycastSource` as part
@@ -75,7 +83,7 @@ fn update_debug_cursor(
     if let Some(new_matrix) = intersection.normal_ray() {
         let coord = Transform::from_matrix(new_matrix.to_transform()).translation;
         for handle in &road {
-            materials.get_mut(handle).unwrap().mouse_position = Vec2::new(coord.x, coord.z);
+            materials.get_mut(handle).unwrap().end = Vec2::new(coord.x, coord.z);
         }
     }
 }
@@ -161,10 +169,7 @@ fn setup_scene(
     commands.spawn(MaterialMeshBundle {
         mesh: meshes.add(Mesh::from(shape::Plane { size: 1.0 })),
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
-        material: c_materials.add(CustomMaterial {
-            mouse_position: Vec2::new(1.0, 0.0),
-            alpha_mode: AlphaMode::Blend,
-        }),
+        material: c_materials.add(CustomMaterial::default()),
         ..default()
     });
 }
@@ -181,11 +186,26 @@ impl Material for CustomMaterial {
     }
 }
 
+impl Default for CustomMaterial {
+    fn default() -> Self {
+        Self {
+            start: Vec2::ZERO,
+            end: Vec2::ONE,
+            tangent: Vec2::Y,
+            alpha_mode: AlphaMode::Blend,
+        }
+    }
+}
+
 // This is the struct that will be passed to your shader
 #[derive(AsBindGroup, TypeUuid, Debug, Clone)]
 #[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
 pub struct CustomMaterial {
     #[uniform(0)]
-    mouse_position: Vec2,
+    start: Vec2,
+    #[uniform(1)]
+    end: Vec2,
+    #[uniform(2)]
+    tangent: Vec2,
     alpha_mode: AlphaMode,
 }
