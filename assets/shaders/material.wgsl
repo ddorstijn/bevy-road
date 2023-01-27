@@ -35,30 +35,10 @@ fn get_arc_params(start: vec2<f32>, end: vec2<f32>, normal: vec2<f32>) -> Arc {
     let angle = angle_between(normal, end - start);
     let radius = base / cos(angle);
     let center = start + normal * radius;
-    let angle_start = angle_between(center - start, center);
-    let angle_end = angle_between(center - end, center);
+    let angle_start = angle_between(start - center, center);
+    let angle_end = angle_between(end - center, center);
 
     return Arc(center, abs(radius), angle_start, angle_end);
-}
-
-fn generate_arc(circle: Arc, startAngle: f32, endAngle: f32, coord: vec2<f32>) -> vec4<f32> {
-    let vColor = vec4<f32>(1.0, 0.0, 0.0, 1.0);
-    let innerRadius = circle.radius - thickness;
-    let outerRadius = circle.radius + thickness;
-
-    let dir = circle.center - coord;
-	let dist = length(dir);
-
-	let inner = smoothstep(innerRadius, innerRadius + smoothness, dist);
-	let outer = smoothstep(outerRadius, outerRadius - smoothness, dist);
-	let bandAlpha = inner * outer;
-    
-    let angle = atan2(dir.y, dir.x) + PI;
-    let startEdge = smoothstep(angle, angle - smoothness, startAngle);
-    let endEdge = smoothstep(angle, angle + smoothness, endAngle);
-    let angleAlpha = startEdge * endEdge;
-    
-    return vec4<f32>(vColor.rgb, bandAlpha * angleAlpha);
 }
 
 // sc is the sin/cos of the aperture
@@ -70,13 +50,13 @@ fn sdArc(p: vec2<f32>, sc: vec2<f32>, ra: f32, rb: f32) -> f32
 
 
 fn generate_arcs(arc: Arc, coord: vec2<f32>) -> f32 {
-    let ac = 0.5 * (arc.angle_end + arc.angle_start); // center
+    let ac = 1.75 * PI; // center
     let aw = 0.5 * abs(arc.angle_end - arc.angle_start); // width
 
     let scb = vec2<f32>(sin(aw),cos(aw));
     let rot = mat2x2<f32>(sin(ac), -cos(ac), 
-                          cos(ac), sin(ac)
-                         );
+                         cos(ac), sin(ac)
+                        );
                         
     let dir = arc.center - coord;
     let coord_r = dir * rot;
@@ -89,6 +69,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let arc = get_arc_params(start, end, normal);
 
     //return generate_arc(circle, min(angle_start, angle_end), max(angle_start, angle_end), in.world_position.xz);
-    let d =  generate_arcs(arc, in.world_position.xz); 
+    let arcc = Arc(vec2<f32>(-1.0, 0.0), 1.0, 1.5 * PI, 1.0 * PI);
+    let d =  generate_arcs(arcc, in.world_position.xz); 
     return vec4<f32>(vec3<f32>(d), 1.0);
 }

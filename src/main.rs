@@ -70,20 +70,26 @@ fn update_raycast_with_cursor(
     }
 }
 
-struct Circle {
+struct Arc {
     center: Vec2,
     radius: f32,
+    angle_start: f32,
+    angle_end: f32,
 }
 
-fn get_circle(start: Vec2, end: Vec2, normal: Vec2) -> Circle {
+fn get_arc_params(start: Vec2, end: Vec2, normal: Vec2) -> Arc {
     let base = start.distance(end) / 2.0;
     let angle = normal.angle_between(end - start);
     let radius = base / angle.cos();
     let center = start + normal * radius;
+    let angle_start = (start - center).angle_between(center);
+    let angle_end = (end - center).angle_between(center);
 
-    return Circle {
-        center: center,
+    return Arc {
+        center,
         radius: radius.abs(),
+        angle_start,
+        angle_end,
     };
 }
 
@@ -103,9 +109,12 @@ fn update_debug_cursor(
         let start = Vec2::ZERO;
         let end = Vec2::new(coord.x, coord.z);
         let normal = Vec2::new(0.0, 1.0).perp();
-        let circle = get_circle(start, end, normal);
-        let angle_start = (circle.center - start).angle_between(circle.center);
-        let angle_end = (circle.center - end).angle_between(circle.center);
+        let arc = get_arc_params(start, end, normal);
+        // println!(
+        //     "a0 = {}, Arc length: {}",
+        //     arc.angle_start,
+        //     arc.angle_end - arc.angle_start
+        // );
 
         for handle in &road {
             materials.get_mut(handle).unwrap().end = Vec2::new(coord.x, coord.z);
