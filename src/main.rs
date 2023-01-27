@@ -107,7 +107,6 @@ fn update_debug_cursor(
         let angle_start = (circle.center - start).angle_between(circle.center);
         let angle_end = (circle.center - end).angle_between(circle.center);
 
-        println!("Angle start: {}, angle_end: {}", angle_start, angle_end);
         for handle in &road {
             materials.get_mut(handle).unwrap().end = Vec2::new(coord.x, coord.z);
         }
