@@ -174,7 +174,7 @@ fn setup_scene(
         .spawn(PbrBundle {
             material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
             transform: Transform {
-                translation: Vec3::new(0.0, 0.05, 0.0),
+                translation: Vec3::new(0.0, 0.15, 0.0),
                 ..default()
             },
             ..default()
@@ -193,9 +193,9 @@ fn setup_scene(
 
     commands
         .spawn(PbrBundle {
-            material: materials.add(Color::rgb(0.0, 0.1, 0.0).into()),
+            material: materials.add(Color::rgb(0.0, 0.4, 0.4).into()),
             mesh: meshes.add(Mesh::from(shape::Plane { size: 20. })),
-            transform: Transform::from_xyz(0.0, -0.1, 0.0),
+            transform: Transform::from_xyz(0.0, 0.1, 0.0),
             ..default()
         })
         .insert(Name::new("Ground"))
@@ -203,7 +203,11 @@ fn setup_scene(
 
     commands.spawn(MaterialMeshBundle {
         mesh: meshes.add(Mesh::from(shape::Plane { size: 1.0 })),
-        transform: Transform::from_scale(Vec3::new(50.0, 1.0, 50.0)),
+        transform: Transform {
+            translation: Vec3::new(0.0, 0.11, 0.0),
+            scale: Vec3::new(50.0, 1.0, 50.0),
+            ..default()
+        },
         material: c_materials.add(CustomMaterial::default()),
         ..default()
     });

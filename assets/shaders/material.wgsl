@@ -30,37 +30,51 @@ fn angle_between(v1: vec2<f32>, v2: vec2<f32>) -> f32 {
     return atan2(v1.y, v1.x) - atan2(v2.y, v2.x);
 }
 
+fn polar(v: vec2<f32>) -> f32 {
+    return (atan2(v.y, v.x) + TAU) % TAU;
+}
+
 fn get_arc_params(start: vec2<f32>, end: vec2<f32>, normal: vec2<f32>) -> Arc {
     let base = distance(start, end) / 2.0;
     let angle = angle_between(normal, end - start);
+    
     let radius = base / cos(angle);
     let center = start + normal * radius;
-    let angle_start = angle_between(start - center, center);
-    let angle_end = angle_between(end - center, center);
+    let angle_start = polar(start - center);
+    let angle_end = polar(end - center);
 
     return Arc(center, abs(radius), angle_start, angle_end);
 }
 
-// sc is the sin/cos of the aperture
-fn sdArc(p: vec2<f32>, sc: vec2<f32>, ra: f32, rb: f32) -> f32
-{
-    let pa = vec2<f32>(abs(p.x), p.y);
-    return sign(select(abs(length(pa)-ra) - rb, length(pa-sc*ra), (sc.y*pa.x>sc.x*pa.y)));
+
+fn between(start: f32, end: f32, alpha: f32) -> f32 {
+    if (start == 0.0) {
+        return f32(alpha > start && alpha < end);
+    }
+
+    if (end > start) {
+        return f32(alpha > end || alpha < start);
+    }
+    
+    return f32(alpha > end && alpha < start);
 }
 
-
-fn generate_arcs(arc: Arc, coord: vec2<f32>) -> f32 {
-    let ac = 1.75 * PI; // center
-    let aw = 0.5 * abs(arc.angle_end - arc.angle_start); // width
-
-    let scb = vec2<f32>(sin(aw),cos(aw));
-    let rot = mat2x2<f32>(sin(ac), -cos(ac), 
-                         cos(ac), sin(ac)
-                        );
-                        
-    let dir = arc.center - coord;
-    let coord_r = dir * rot;
-    return sdArc(coord_r, scb, arc.radius, thickness);
+fn generate_arc(arc: Arc, coord: vec2<f32>) -> vec4<f32> {
+    let color = vec3<f32>(1.0, 0.0, 0.0);
+    let innerRadius = arc.radius - thickness;
+    let outerRadius = arc.radius + thickness;
+    
+    let dir = coord - arc.center;
+	let dist = length(dir);
+    
+    // Mask circle
+	let inner = step(innerRadius, dist);
+	let outer = step(dist, outerRadius);
+	let circle_mask = inner * outer;
+    
+    // Mask arc
+    let arc_mask = between(arc.angle_start, arc.angle_end, polar(dir));
+    return vec4<f32>(color, circle_mask * arc_mask);
 }
 
 @fragment
@@ -68,8 +82,5 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let normal = vec2<f32>(tangent.y, -tangent.x);
     let arc = get_arc_params(start, end, normal);
 
-    //return generate_arc(circle, min(angle_start, angle_end), max(angle_start, angle_end), in.world_position.xz);
-    let arcc = Arc(vec2<f32>(-1.0, 0.0), 1.0, 1.5 * PI, 1.0 * PI);
-    let d =  generate_arcs(arcc, in.world_position.xz); 
-    return vec4<f32>(vec3<f32>(d), 1.0);
+    return generate_arc(arc, in.world_position.xz);
 }
