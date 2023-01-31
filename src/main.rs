@@ -230,7 +230,7 @@ impl Default for CustomMaterial {
         Self {
             start: Vec2::ZERO,
             end: Vec2::ONE,
-            tangent: Vec2::Y,
+            normal: Vec2::X,
             alpha_mode: AlphaMode::Blend,
         }
     }
@@ -245,6 +245,6 @@ pub struct CustomMaterial {
     #[uniform(1)]
     end: Vec2,
     #[uniform(2)]
-    tangent: Vec2,
+    normal: Vec2,
     alpha_mode: AlphaMode,
 }

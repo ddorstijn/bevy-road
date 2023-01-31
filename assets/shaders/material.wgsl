@@ -5,7 +5,7 @@ var<uniform> start: vec2<f32>;
 var<uniform> end: vec2<f32>;
 
 @group(1) @binding(2)
-var<uniform> tangent: vec2<f32>;
+var<uniform> normal: vec2<f32>;
 
 struct VertexOutput {
     @builtin(position) coord: vec4<f32>,
@@ -26,26 +26,9 @@ struct Arc {
     angle_end: f32
 };
 
-fn angle_between(v1: vec2<f32>, v2: vec2<f32>) -> f32 {
-    return atan2(v1.y, v1.x) - atan2(v2.y, v2.x);
-}
-
 fn polar(v: vec2<f32>) -> f32 {
     return (atan2(v.y, v.x) + TAU) % TAU;
 }
-
-fn get_arc_params(start: vec2<f32>, end: vec2<f32>, normal: vec2<f32>) -> Arc {
-    let base = distance(start, end) / 2.0;
-    let angle = angle_between(normal, end - start);
-    
-    let radius = base / cos(angle);
-    let center = start + normal * radius;
-    let angle_start = polar(start - center);
-    let angle_end = polar(end - center);
-
-    return Arc(center, abs(radius), angle_start, angle_end);
-}
-
 
 fn between(start: f32, end: f32, alpha: f32) -> f32 {
     if (start == 0.0) {
@@ -77,10 +60,28 @@ fn generate_arc(arc: Arc, coord: vec2<f32>) -> vec4<f32> {
     return vec4<f32>(color, circle_mask * arc_mask);
 }
 
+fn get_arc_params(start: vec2<f32>, end: vec2<f32>) -> Arc {
+    let base = distance(start, end) / 2.0;
+    let angle = polar(end - start);
+    
+    let radius = base / cos(angle);
+    let center = start + radius * vec2<f32>(1.0, 0.0);
+    let angle_start = polar(start - center);
+    let angle_end = polar(end - center);
+
+    return Arc(center, abs(radius), angle_start, angle_end);
+}
+
+fn get_local_transform(angle: f32) -> mat2x2<f32> {
+    let sine = sin(angle);
+    let cosine = cos(angle);
+    return mat2x2<f32>(cosine, -sine,
+                       sine, cosine);
+}
+
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
-    let normal = vec2<f32>(tangent.y, -tangent.x);
-    let arc = get_arc_params(start, end, normal);
-
-    return generate_arc(arc, in.world_position.xz);
+    let rot = get_local_transform(polar(normal));
+    let arc = get_arc_params(start * rot, end * rot);
+    return generate_arc(arc, in.world_position.xz * rot);
 }
