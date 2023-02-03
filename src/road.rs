@@ -10,18 +10,18 @@ pub enum SegmentType {
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 pub struct RoadSegment {
-    pub start: Vec3,
-    pub end: Vec3,
-    pub tangent: Vec2,
+    pub start: Vec2,
+    pub end: Vec2,
+    pub normal: Vec2,
     pub road_type: SegmentType,
 }
 
 impl Default for RoadSegment {
     fn default() -> Self {
         Self {
-            start: Vec3::new(0.0, 0.0, 0.0),
-            end: Vec3::new(2.0, 0., 1.),
-            tangent: Vec2::new(0., 1.).normalize(),
+            start: Vec2::new(0.0, 0.0),
+            end: Vec2::new(2.0, 1.),
+            normal: Vec2::new(0., 1.).normalize(),
             road_type: SegmentType::Arc,
         }
     }
@@ -29,22 +29,20 @@ impl Default for RoadSegment {
 
 impl RoadSegment {
     pub fn generate_segment(self: &mut Self) -> Mesh {
-        let start = Vec2::new(self.start.x, self.start.z);
-        let end = Vec2::new(self.end.x, self.end.z);
-
-        if (end - start).length() == 0. {
+        if (self.end - self.start).length() == 0. {
             // TODO: throw error
             panic!("Length of the road is 0");
         }
 
-        self.road_type = match is_straight(self.tangent.angle_between(end - start)) {
+        self.road_type = match is_straight(self.normal.perp().angle_between(self.end - self.start))
+        {
             true => SegmentType::Line,
             false => SegmentType::Arc,
         };
 
         let arc = match self.road_type {
-            SegmentType::Line => generate_line(start, end, -1. * self.tangent.perp(), THICKNESS),
-            SegmentType::Arc => generate_arc(start, end, -1. * self.tangent.perp(), THICKNESS),
+            SegmentType::Line => generate_line(self.start, self.end, -1.0 * self.normal, THICKNESS),
+            SegmentType::Arc => generate_arc(self.start, self.end, -1.0 * self.normal, THICKNESS),
         };
 
         generate_model(arc)
@@ -66,7 +64,7 @@ pub fn regenerate_mesh(
             let (mut transform, _) = gizmos
                 .get_mut(child)
                 .expect("No child with component of type RoadEnd");
-            transform.translation = segment.end;
+            transform.translation = Vec3::new(segment.end.x, 0.0, segment.end.y);
         }
     }
 }
@@ -100,8 +98,10 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2, thickness: f32) -> Vec<Vec
     // Calculate the center point of the arc
     let (center, radius) = calculate_center(start, end, normal);
 
-    let angle_start = (start - center).angle_between(center);
-    let angle_end = (end - center).angle_between(center);
+    let dir_start = start - center;
+    let angle_start = dir_start.y.atan2(dir_start.x);
+    let dir_end = end - center;
+    let angle_end = dir_end.y.atan2(dir_end.x);
     let angle_diff = angle_end - angle_start;
 
     let arc_length = angle_diff * radius;
