@@ -1,20 +1,27 @@
 use bevy::prelude::*;
 use bevy::render::mesh::{self, PrimitiveTopology};
 
-#[derive(Debug, Reflect)]
-pub enum SegmentType {
-    Line,
-    Arc,
-}
-
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 pub struct RoadSegment {
     pub start: Vec2,
     pub end: Vec2,
     pub normal: Vec2,
-    pub road_type: SegmentType,
 }
+
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
+pub struct CurvedRoadSegment {
+    pub center: Vec2,
+}
+
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
+pub struct StraightRoadSegment {}
+
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
+pub struct IntersectionRoadSegment {}
 
 impl Default for RoadSegment {
     fn default() -> Self {
@@ -22,9 +29,12 @@ impl Default for RoadSegment {
             start: Vec2::new(0.0, 0.0),
             end: Vec2::new(2.0, 1.),
             normal: Vec2::new(0., 1.).normalize(),
-            road_type: SegmentType::Arc,
         }
     }
+}
+
+trait Traversable {
+    fn traverse(self: &Self, road_segment: &RoadSegment, progress: f32) -> Vec2;
 }
 
 impl RoadSegment {
@@ -34,19 +44,18 @@ impl RoadSegment {
             panic!("Length of the road is 0");
         }
 
-        self.road_type = match is_straight(self.normal.perp().angle_between(self.end - self.start))
-        {
-            true => SegmentType::Line,
-            false => SegmentType::Arc,
-        };
-
-        let arc = match self.road_type {
-            SegmentType::Line => generate_line(self.start, self.end, -1.0 * self.normal, THICKNESS),
-            SegmentType::Arc => generate_arc(self.start, self.end, -1.0 * self.normal, THICKNESS),
-        };
-
-        generate_model(arc)
+        todo!();
     }
+}
+
+impl Traversable for CurvedRoadSegment {
+    fn traverse(self: &Self, progress: f32) -> Vec2 {
+        return Vec2::X;
+    }
+}
+
+impl Traversable for StraightRoadSegment {
+    fn traverse(self: &Self, progress: f32) -> Vec2 {}
 }
 
 #[derive(Component, Reflect)]
@@ -67,15 +76,6 @@ pub fn regenerate_mesh(
             transform.translation = Vec3::new(segment.end.x, 0.0, segment.end.y);
         }
     }
-}
-
-const DETAIL: usize = 5;
-const TOLERANCE: f32 = 0.05;
-const THICKNESS: f32 = 0.25;
-
-fn is_straight(angle: f32) -> bool {
-    // Calculate the difference between the angle and a half circle
-    angle.abs() < TOLERANCE || (angle.abs() - std::f32::consts::PI).abs() < TOLERANCE
 }
 
 fn generate_point_on_circle(center: Vec2, radius: f32, angle: f32) -> Vec2 {
@@ -100,6 +100,7 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2, thickness: f32) -> Vec<Vec
 
     let dir_start = start - center;
     let angle_start = dir_start.y.atan2(dir_start.x);
+    println!("{}", angle_start);
     let dir_end = end - center;
     let angle_end = dir_end.y.atan2(dir_end.x);
     let angle_diff = angle_end - angle_start;
@@ -110,7 +111,7 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2, thickness: f32) -> Vec<Vec
 
     (0..num_points)
         .map(|i| {
-            let angle = angle_start - angle_step * i as f32;
+            let angle = angle_start + angle_step * i as f32;
             // Calculate the position of the vertex using the current angle
             let inner_point = generate_point_on_circle(center, radius + thickness, angle);
             let outer_point = generate_point_on_circle(center, radius - thickness, angle);
