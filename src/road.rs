@@ -1,36 +1,26 @@
 use bevy::prelude::*;
 use bevy::render::mesh::{self, PrimitiveTopology};
 
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-pub struct RoadSegment {
-    pub start: Vec2,
-    pub end: Vec2,
+#[derive(Component, Debug)]
+pub struct Waypoint {
+    pub position: Vec2,
     pub normal: Vec2,
+    pub group: &WaypointGroup,
 }
 
-#[derive(Component, Reflect, Default, Debug)]
-#[reflect(Component)]
-pub struct CurvedRoadSegment {
-    pub center: Vec2,
+#[derive(Component, Debug)]
+pub struct Connection {
+    pub start: &Waypoint,
+    pub end: &Waypoint,
+    pub center: Option<Vec2>,
+    pub length: f32,
 }
 
-#[derive(Component, Reflect, Default, Debug)]
-#[reflect(Component)]
-pub struct StraightRoadSegment {}
-
-#[derive(Component, Reflect, Default, Debug)]
-#[reflect(Component)]
-pub struct IntersectionRoadSegment {}
-
-impl Default for RoadSegment {
-    fn default() -> Self {
-        Self {
-            start: Vec2::new(0.0, 0.0),
-            end: Vec2::new(2.0, 1.),
-            normal: Vec2::new(0., 1.).normalize(),
-        }
-    }
+#[derive(Component, Debug)]
+struct WaypointGroup {
+    position: Vec3,
+    normal: f32,
+    waypoints: vec<&Waypoint>,
 }
 
 trait Traversable {

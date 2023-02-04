@@ -2,12 +2,14 @@
 // Holds a Vec3 of the coordinate
 struct Waypoint {
 	position: Vec3,
+	normal: Vec2,
+	group: &WaypointGroup
 }
 
 // Holds references to a group of waypoints that form a group of lanes
-struct ConnectionGroup {
+struct WaypointGroup {
 	position: Vec3,
-	rotation: f32,
+	normal: f32,
 	waypoints: &vec<Waypoint>,
 }
 
@@ -39,4 +41,5 @@ Determine type of roadsegment
 		between them.
 
 Generate mesh
-	Traverse connection
+	Traverse connections. Check for groups.
+	- Adjacent connections should generate different roadmarkings
