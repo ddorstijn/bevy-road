@@ -1,18 +1,14 @@
-use bevy::{
-    prelude::*,
-    reflect::TypeUuid,
-    render::render_resource::{AsBindGroup, ShaderRef},
-};
+use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_mod_raycast::{
-    DefaultRaycastingPlugin, Intersection, RaycastMesh, RaycastMethod, RaycastSource, RaycastSystem,
-};
+
+pub mod mouse_picking;
+use mouse_picking::PickingPlugin;
 
 pub mod flycam;
 use flycam::{pan_orbit_camera, PanOrbitCamera};
 
 pub mod road;
-use road::{regenerate_mesh, RoadEnd, RoadSegment};
+use road::{generate_mesh, RoadEdge, RoadEnd, RoadNode, SelectedNode};
 
 fn main() {
     App::new()
@@ -21,8 +17,6 @@ fn main() {
             ..Default::default()
         }))
         .add_plugin(WorldInspectorPlugin)
-        .add_plugin(MaterialPlugin::<VirtualRoadMaterial>::default())
-        .add_plugin(DefaultRaycastingPlugin::<MouseRaycast>::default())
         .add_plugin(GamePlugin)
         .run();
 }
@@ -31,60 +25,12 @@ struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<RoadSegment>()
-            .add_system_to_stage(
-                CoreStage::First,
-                update_raycast_with_cursor.before(RaycastSystem::BuildRays::<MouseRaycast>),
-            )
+        app.register_type::<RoadNode>()
+            .register_type::<RoadEdge>()
+            .init_resource::<SelectedNode>()
             .add_startup_system(setup_scene)
-            .add_startup_system(test_system)
             .add_system(pan_orbit_camera)
-            .add_system(regenerate_mesh)
-            .add_system(update_virtual_road);
-    }
-}
-
-fn test_system() {
-    return;
-}
-
-/// This is a unit struct we will use to mark our generic `RaycastMesh`s and `RaycastSource` as part
-/// of the same group, or "RaycastSet". For more complex use cases, you might use this to associate
-/// some meshes with one ray casting source, and other meshes with a different ray casting source."
-struct MouseRaycast;
-
-// Update our `RaycastSource` with the current cursor position every frame.
-fn update_raycast_with_cursor(
-    mut cursor: EventReader<CursorMoved>,
-    mut query: Query<&mut RaycastSource<MouseRaycast>>,
-) {
-    // Grab the most recent cursor event if it exists:
-    let cursor_position = match cursor.iter().last() {
-        Some(cursor_moved) => cursor_moved.position,
-        None => return,
-    };
-
-    for mut pick_source in &mut query {
-        pick_source.cast_method = RaycastMethod::Screenspace(cursor_position);
-    }
-}
-
-fn update_virtual_road(
-    mut materials: ResMut<Assets<VirtualRoadMaterial>>,
-    cursors: Query<&Intersection<MouseRaycast>>,
-    road: Query<&Handle<VirtualRoadMaterial>>,
-) {
-    // Set the cursor translation to the top pick's world coordinates
-    let intersection = match cursors.iter().last() {
-        Some(x) => x,
-        None => return,
-    };
-    if let Some(new_matrix) = intersection.normal_ray() {
-        let coord = Transform::from_matrix(new_matrix.to_transform()).translation;
-
-        for handle in &road {
-            materials.get_mut(handle).unwrap().end = Vec2::new(coord.x, coord.z);
-        }
+            .add_system(generate_mesh);
     }
 }
 
@@ -92,11 +38,11 @@ fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut c_materials: ResMut<Assets<VirtualRoadMaterial>>,
 ) {
     let translation = Vec3::new(-2.0, 2.5, 5.0);
     let radius = translation.length();
 
+    // Environment and player
     commands
         .spawn(Camera3dBundle {
             transform: Transform::from_translation(translation).looking_at(Vec3::ZERO, Vec3::Y),
@@ -106,7 +52,7 @@ fn setup_scene(
             radius,
             ..Default::default()
         })
-        .insert(RaycastSource::<MouseRaycast>::new_transform_empty())
+        .insert(PickingCameraBundle::default())
         .insert(Name::new("Player"));
 
     const HALF_SIZE: f32 = 10.0;
@@ -134,7 +80,17 @@ fn setup_scene(
             ..default()
         })
         .insert(Name::new("Sun"));
+    commands
+        .spawn(PbrBundle {
+            material: materials.add(Color::rgb(0.0, 0.4, 0.4).into()),
+            mesh: meshes.add(Mesh::from(shape::Plane { size: 20. })),
+            transform: Transform::from_xyz(0.0, 0.1, 0.0),
+            ..default()
+        })
+        .insert(PickableBundle::default())
+        .insert(Name::new("Ground"));
 
+    // Road system
     commands
         .spawn(PbrBundle {
             material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
@@ -144,8 +100,7 @@ fn setup_scene(
             },
             ..default()
         })
-        .insert(RoadSegment { ..default() })
-        .insert(Name::new("Piecewise Road"))
+        .insert(Name::new("Start node"))
         .with_children(|parent| {
             parent
                 .spawn(PbrBundle {
@@ -153,63 +108,7 @@ fn setup_scene(
                     mesh: meshes.add(Mesh::from(shape::Cube { size: 0.25 })),
                     ..default()
                 })
+                .insert(PickableBundle::default())
                 .insert(RoadEnd);
         });
-
-    commands
-        .spawn(PbrBundle {
-            material: materials.add(Color::rgb(0.0, 0.4, 0.4).into()),
-            mesh: meshes.add(Mesh::from(shape::Plane { size: 20. })),
-            transform: Transform::from_xyz(0.0, 0.1, 0.0),
-            ..default()
-        })
-        .insert(Name::new("Ground"))
-        .insert(RaycastMesh::<MouseRaycast>::default());
-
-    commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane { size: 1.0 })),
-        transform: Transform {
-            translation: Vec3::new(0.0, 0.11, 0.0),
-            scale: Vec3::new(50.0, 1.0, 50.0),
-            ..default()
-        },
-        material: c_materials.add(VirtualRoadMaterial::default()),
-        ..default()
-    });
-}
-
-/// The Material trait is very configurable, but comes with sensible defaults for all methods.
-/// You only need to implement functions for features that need non-default behavior. See the Material api docs for details!
-impl Material for VirtualRoadMaterial {
-    fn fragment_shader() -> ShaderRef {
-        "shaders/material.wgsl".into()
-    }
-
-    fn alpha_mode(&self) -> AlphaMode {
-        self.alpha_mode
-    }
-}
-
-impl Default for VirtualRoadMaterial {
-    fn default() -> Self {
-        Self {
-            start: Vec2::ZERO,
-            end: Vec2::ONE,
-            normal: Vec2::X,
-            alpha_mode: AlphaMode::Blend,
-        }
-    }
-}
-
-// This is the struct that will be passed to your shader
-#[derive(AsBindGroup, TypeUuid, Debug, Clone)]
-#[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
-pub struct VirtualRoadMaterial {
-    #[uniform(0)]
-    start: Vec2,
-    #[uniform(1)]
-    end: Vec2,
-    #[uniform(2)]
-    normal: Vec2,
-    alpha_mode: AlphaMode,
 }

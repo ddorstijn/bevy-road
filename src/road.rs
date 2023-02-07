@@ -1,35 +1,53 @@
 use bevy::prelude::*;
 use bevy::render::mesh::{self, PrimitiveTopology};
 
-#[derive(Component, Debug)]
-pub struct Waypoint {
-    pub position: Vec2,
-    pub normal: Vec2,
-    pub group: &WaypointGroup,
+#[derive(Resource, Default)]
+pub struct SelectedNode(Option<Entity>);
+
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub struct RoadNode {
+    pub lanes: u32,
+    pub connections: Vec<Entity>,
 }
 
-#[derive(Component, Debug)]
-pub struct Connection {
-    pub start: &Waypoint,
-    pub end: &Waypoint,
+impl Default for RoadNode {
+    fn default() -> Self {
+        Self {
+            lanes: 1,
+            connections: vec![],
+        }
+    }
+}
+
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub struct RoadEdge {
+    pub start: Transform,
+    pub end: Transform,
+    pub lanes: u32,
     pub center: Option<Vec2>,
     pub length: f32,
 }
 
+impl Default for RoadEdge {
+    fn default() -> Self {
+        Self {
+            start: Transform::default(),
+            end: Transform::default(),
+            lanes: 1,
+            center: None,
+            length: 1.0,
+        }
+    }
+}
+
 #[derive(Component, Debug)]
-struct WaypointGroup {
-    position: Vec3,
-    normal: f32,
-    waypoints: vec<&Waypoint>,
-}
+struct RoadSection {}
 
-trait Traversable {
-    fn traverse(self: &Self, road_segment: &RoadSegment, progress: f32) -> Vec2;
-}
-
-impl RoadSegment {
+impl RoadEdge {
     pub fn generate_segment(self: &mut Self) -> Mesh {
-        if (self.end - self.start).length() == 0. {
+        if (self.start.translation - self.end.translation).length() == 0. {
             // TODO: throw error
             panic!("Length of the road is 0");
         }
@@ -38,33 +56,29 @@ impl RoadSegment {
     }
 }
 
-impl Traversable for CurvedRoadSegment {
-    fn traverse(self: &Self, progress: f32) -> Vec2 {
-        return Vec2::X;
-    }
-}
-
-impl Traversable for StraightRoadSegment {
-    fn traverse(self: &Self, progress: f32) -> Vec2 {}
-}
-
+// Marker component that is clickable to expand the road
 #[derive(Component, Reflect)]
 pub struct RoadEnd;
 
-pub fn regenerate_mesh(
-    mut segments: Query<(&mut Handle<Mesh>, &mut RoadSegment, &Children), Changed<RoadSegment>>,
-    mut gizmos: Query<(&mut Transform, With<RoadEnd>)>,
+pub fn generate_mesh(
+    mut segments: Query<(&mut Handle<Mesh>, &mut RoadEdge), Added<RoadEdge>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    for (mut mesh, mut segment, children) in &mut segments {
+    for (mut mesh, mut segment) in &mut segments {
         *mesh = meshes.add(segment.generate_segment());
+    }
+}
 
-        for &child in children.iter() {
-            let (mut transform, _) = gizmos
-                .get_mut(child)
-                .expect("No child with component of type RoadEnd");
-            transform.translation = Vec3::new(segment.end.x, 0.0, segment.end.y);
-        }
+/// Remove edges when connecting nodes get removed
+pub fn remove_edge(
+    removals: RemovedComponents<RoadNode>,
+    query: Query<&RoadNode>,
+    mut commands: Commands,
+) {
+    for entity in removals.iter() {
+        query.get(entity).unwrap().connections.iter().for_each(|c| {
+            commands.entity(*c).despawn_recursive();
+        })
     }
 }
 
@@ -96,7 +110,7 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2, thickness: f32) -> Vec<Vec
     let angle_diff = angle_end - angle_start;
 
     let arc_length = angle_diff * radius;
-    let num_points = (arc_length * DETAIL as f32).abs().ceil() as usize;
+    let num_points = (arc_length * 10.0).abs().ceil() as usize;
     let angle_step = angle_diff / (num_points - 1) as f32;
 
     (0..num_points)
