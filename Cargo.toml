@@ -13,3 +13,4 @@ opt-level = 3
 bevy = "0.9.1"
 bevy-inspector-egui = "0.17.0"
 bevy_mod_raycast = "0.7.0"
+bevy_rapier3d = "0.20.0"

@@ -1,8 +1,11 @@
 use bevy::prelude::*;
 use bevy::render::mesh::{self, PrimitiveTopology};
 
-#[derive(Resource, Default)]
-pub struct SelectedNode(Option<Entity>);
+#[derive(Resource, Reflect, Default)]
+#[reflect(Resource)]
+pub struct SelectedNode {
+    pub node: Option<Entity>,
+}
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
