@@ -1,18 +1,63 @@
-use bevy::prelude::{Res, Vec3};
-use bevy_rapier3d::prelude::{QueryFilter, RapierContext};
+use bevy::prelude::*;
+use bevy_rapier3d::prelude::*;
 
-/* Cast a ray inside of a system. */
-fn cast_ray(rapier_context: Res<RapierContext>) {
-    let ray_pos = Vec3::new(1.0, 2.0, 3.0);
-    let ray_dir = Vec3::new(0.0, 1.0, 0.0);
-    let max_toi = 4.0;
-    let solid = true;
-    let filter = QueryFilter::default();
+use crate::{
+    flycam::PanOrbitCamera,
+    road::{RoadEnd, SelectedNode},
+};
 
-    if let Some((entity, toi)) = rapier_context.cast_ray(ray_pos, ray_dir, max_toi, solid, filter) {
-        // The first collider hit has the entity `entity` and it hit after
-        // the ray travelled a distance equal to `ray_dir * toi`.
-        let hit_point = ray_pos + ray_dir * toi;
-        println!("Entity {:?} hit at point {}", entity, hit_point);
+pub fn drag_road(
+    rapier: Res<RapierContext>,
+    camera: Query<(&Camera, &GlobalTransform), With<PanOrbitCamera>>,
+    mouse_button: Res<Input<MouseButton>>,
+    windows: Res<Windows>,
+    mut selected_node: ResMut<SelectedNode>,
+    mut transform: Query<&mut Transform, With<RoadEnd>>,
+) {
+    // Drop selected node
+    if selected_node.node.is_some() && mouse_button.just_pressed(MouseButton::Left) {
+        selected_node.node = None;
+        return;
+    }
+
+    // Do nothing if not selected and not selecting anything
+    if selected_node.node.is_none() && !mouse_button.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    // Build ray from screenspace
+    let cursor_pos = match windows.get_primary().unwrap().cursor_position() {
+        Some(pos) => pos,
+        None => {
+            return;
+        }
+    };
+
+    let (cam, cam_transform) = camera.get_single().unwrap();
+    let ray = cam.viewport_to_world(cam_transform, cursor_pos).unwrap();
+
+    let filter = match selected_node.node {
+        Some(_) => QueryFilter::exclude_dynamic().groups(CollisionGroups::new(
+            Group::GROUP_2.into(),
+            Group::GROUP_2.into(),
+        )),
+        None => QueryFilter::exclude_dynamic().groups(CollisionGroups::new(
+            Group::GROUP_1.into(),
+            Group::GROUP_1.into(),
+        )),
+    };
+
+    if let Some((entity, toi)) = rapier.cast_ray(ray.origin, ray.direction, f32::MAX, false, filter)
+    {
+        match selected_node.node {
+            Some(x) => {
+                let hit_point = ray.origin + ray.direction * toi;
+                transform.get_mut(x).unwrap().translation = hit_point;
+                println!("{}", hit_point);
+            }
+            None => {
+                selected_node.node = Some(entity);
+            }
+        }
     }
 }
