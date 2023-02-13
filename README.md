@@ -3,27 +3,21 @@
 struct RoadNode {
 	position: Vec3,
 	normal: Vec2,
-	group: &RoadSection
-}
-
-// Holds references to a group of waypoints that form a group of lanes
-struct RoadSection {
-	position: Vec3,
-	normal: f32,
-	nodes: &vec<RoadNode>,
-}
-
-// Holds
-struct Intersection {
-	incoming: vec<&WaypointGroup>,
-	outgoing: vec<&WaypointGroup>,
+	lanes: u32,
 }
 
 // Holds a reference to the start and end waypoints
 // Determines if the connection is a straight line or a curve
 struct RoadEdge {
 	start: &Roadnode,
-	end: &RoadNode
+	end: &RoadNode,
+	center: Option<Center>,
+}
+
+// Holds references to a group of waypoints that form a group of lanes
+struct RoadIntersection {
+	position: Vec3,
+	nodes: &vec<RoadNode>,
 }
 ```
 
