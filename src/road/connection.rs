@@ -1,67 +1,35 @@
-use bevy::prelude::*;
-use bevy::render::mesh::{self, PrimitiveTopology};
-
-#[derive(Resource, Reflect, Default)]
-#[reflect(Resource)]
-pub struct SelectedNode {
-    pub node: Option<Entity>,
-}
+use crate::RoadNode;
+use bevy::{
+    prelude::*,
+    render::{mesh, render_resource::PrimitiveTopology},
+};
 
 #[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-pub struct RoadNode {
-    pub lanes: u32,
-    pub connections: Vec<Entity>,
-}
-
-impl Default for RoadNode {
-    fn default() -> Self {
-        Self {
-            lanes: 1,
-            connections: vec![],
-        }
-    }
-}
-
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
 pub struct RoadEdge {
-    pub start: Transform,
-    pub end: Transform,
+    pub start: Entity,
+    pub end: Entity,
     pub lanes: u32,
     pub center: Option<Vec2>,
     pub length: f32,
 }
 
-impl Default for RoadEdge {
-    fn default() -> Self {
-        Self {
-            start: Transform::default(),
-            end: Transform::default(),
-            lanes: 1,
-            center: None,
-            length: 1.0,
-        }
-    }
-}
-
-#[derive(Component, Debug)]
-struct RoadSection {}
-
 impl RoadEdge {
     pub fn generate_segment(self: &mut Self) -> Mesh {
-        if (self.start.translation - self.end.translation).length() == 0. {
-            // TODO: throw error
-            panic!("Length of the road is 0");
-        }
+        // if (self.start.translation - self.end.translation).length() == 0. {
+        //     // TODO: throw error
+        //     panic!("Length of the road is 0");
+        // }
 
         todo!();
     }
 }
 
-// Marker component that is clickable to expand the road
-#[derive(Component, Reflect)]
-pub struct RoadEnd;
+#[derive(Bundle)]
+pub struct ConnectionBundle {
+    #[bundle]
+    pub pbr: PbrBundle,
+    pub edge: RoadEdge,
+}
 
 pub fn generate_mesh(
     mut segments: Query<(&mut Handle<Mesh>, &mut RoadEdge), Added<RoadEdge>>,
@@ -71,7 +39,6 @@ pub fn generate_mesh(
         *mesh = meshes.add(segment.generate_segment());
     }
 }
-
 /// Remove edges when connecting nodes get removed
 pub fn remove_edge(
     removals: RemovedComponents<RoadNode>,
@@ -85,7 +52,8 @@ pub fn remove_edge(
     }
 }
 
-fn generate_point_on_circle(center: Vec2, radius: f32, angle: f32) -> Vec2 {
+// Helper functions
+fn polar_to_world(center: Vec2, radius: f32, angle: f32) -> Vec2 {
     let x = center.x + angle.cos() * radius;
     let y = center.y + angle.sin() * radius;
 
@@ -107,7 +75,6 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2, thickness: f32) -> Vec<Vec
 
     let dir_start = start - center;
     let angle_start = dir_start.y.atan2(dir_start.x);
-    println!("{}", angle_start);
     let dir_end = end - center;
     let angle_end = dir_end.y.atan2(dir_end.x);
     let angle_diff = angle_end - angle_start;
@@ -120,8 +87,8 @@ fn generate_arc(start: Vec2, end: Vec2, normal: Vec2, thickness: f32) -> Vec<Vec
         .map(|i| {
             let angle = angle_start + angle_step * i as f32;
             // Calculate the position of the vertex using the current angle
-            let inner_point = generate_point_on_circle(center, radius + thickness, angle);
-            let outer_point = generate_point_on_circle(center, radius - thickness, angle);
+            let inner_point = polar_to_world(center, radius + thickness, angle);
+            let outer_point = polar_to_world(center, radius - thickness, angle);
 
             [inner_point, outer_point]
         })

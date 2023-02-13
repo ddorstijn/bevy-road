@@ -8,11 +8,11 @@ use bevy_rapier3d::{
 };
 use flycam::{pan_orbit_camera, PanOrbitCamera};
 
-pub mod mouse_picking;
-
 pub mod road;
-use mouse_picking::drag_road;
-use road::{generate_mesh, RoadEdge, RoadEnd, RoadNode, SelectedNode};
+
+use road::{NewConnection, RoadEdge, RoadEnd, RoadNode, RoadPlugin};
+
+use crate::road::{ConnectionBundle, RoadBundle, RoadEndBundle};
 
 fn main() {
     App::new()
@@ -33,38 +33,12 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<RoadNode>()
             .register_type::<RoadEdge>()
-            .init_resource::<SelectedNode>()
+            .add_plugin(RoadPlugin)
+            .init_resource::<NewConnection>()
             .add_startup_system(setup_scene)
-            .add_system(pan_orbit_camera)
-            .add_system(drag_road)
-            // .add_system(drag_road_end)
-            .add_system(generate_mesh);
+            .add_system(pan_orbit_camera);
     }
 }
-
-// fn update_road_end(
-//     cursors: Query<&Intersection<PickingRaycastSet>>,
-//     mut query: Query<&mut Transform, With<RoadEnd>>,
-//     selected_node: Res<SelectedNode>,
-// ) {
-//     if selected_node.node.is_none() {
-//         return;
-//     }
-
-//     // Set the cursor translation to the top pick's world coordinates
-//     let intersection = match cursors.iter().last() {
-//         Some(x) => x,
-//         None => return,
-//     };
-
-//     if let Some(new_matrix) = intersection.normal_ray() {
-//         let entity = selected_node.node.unwrap();
-//         let mut s = query
-//             .get_mut(entity)
-//             .expect("Selected node did not have a RoadNode");
-//         s.translation = Transform::from_matrix(new_matrix.to_transform()).translation;
-//     }
-// }
 
 fn setup_scene(
     mut commands: Commands,
@@ -115,45 +89,28 @@ fn setup_scene(
         .spawn(PbrBundle {
             material: materials.add(Color::rgb(0.0, 0.4, 0.4).into()),
             mesh: meshes.add(Mesh::from(shape::Plane { size: 20. })),
-            transform: Transform::from_xyz(0.0, 0.1, 0.0),
+            transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..default()
         })
         .insert(Collider::cuboid(10.0, 0.01, 10.0))
         .insert(CollisionGroups::new(
-            Group::GROUP_2.into(),
-            Group::GROUP_2.into(),
+            Group::GROUP_1.into(),
+            Group::GROUP_1.into(),
         ))
         .insert(Name::new("Ground"));
 
     // Road system
     commands
-        .spawn(PbrBundle {
-            material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-            transform: Transform {
-                translation: Vec3::new(0.0, 0.15, 0.0),
+        .spawn(RoadBundle {
+            pbr: PbrBundle {
+                material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+                mesh: meshes.add(Mesh::from(shape::UVSphere {
+                    radius: 0.025,
+                    ..default()
+                })),
                 ..default()
             },
-            ..default()
+            node: RoadNode::default(),
         })
-        .insert(RoadNode::default())
-        .insert(Name::new("Start node"))
-        .with_children(|parent| {
-            parent
-                .spawn(PbrBundle {
-                    material: materials.add(Color::rgb(1., 0., 0.).into()),
-                    mesh: meshes.add(Mesh::from(shape::Cube { size: 0.25 })),
-                    transform: Transform {
-                        translation: Vec3::new(0.0, 0.0, 0.0),
-                        ..default()
-                    },
-                    ..default()
-                })
-                .insert(Collider::cuboid(0.13, 0.13, 0.13))
-                .insert(CollisionGroups::new(
-                    Group::GROUP_1.into(),
-                    Group::GROUP_1.into(),
-                ))
-                .insert(Name::new("Road End"))
-                .insert(RoadEnd);
-        });
+        .insert(Name::new("Start node"));
 }
