@@ -10,10 +10,6 @@ use flycam::{pan_orbit_camera, PanOrbitCamera};
 
 pub mod road;
 
-use road::{NewConnection, RoadEdge, RoadEnd, RoadNode, RoadPlugin};
-
-use crate::road::{ConnectionBundle, RoadBundle, RoadEndBundle};
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(AssetPlugin {
