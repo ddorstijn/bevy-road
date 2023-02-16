@@ -7,6 +7,7 @@ use bevy_rapier3d::{
     render::RapierDebugRenderPlugin,
 };
 use flycam::{pan_orbit_camera, PanOrbitCamera};
+use road::RoadPlugin;
 
 pub mod road;
 
@@ -27,10 +28,7 @@ struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<RoadNode>()
-            .register_type::<RoadEdge>()
-            .add_plugin(RoadPlugin)
-            .init_resource::<NewConnection>()
+        app.add_plugin(RoadPlugin)
             .add_startup_system(setup_scene)
             .add_system(pan_orbit_camera);
     }
@@ -85,7 +83,7 @@ fn setup_scene(
         .spawn(PbrBundle {
             material: materials.add(Color::rgb(0.0, 0.4, 0.4).into()),
             mesh: meshes.add(Mesh::from(shape::Plane { size: 20. })),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
+            transform: Transform::from_xyz(0.0, -1.0, 0.0),
             ..default()
         })
         .insert(Collider::cuboid(10.0, 0.01, 10.0))
@@ -94,19 +92,4 @@ fn setup_scene(
             Group::GROUP_1.into(),
         ))
         .insert(Name::new("Ground"));
-
-    // Road system
-    commands
-        .spawn(RoadBundle {
-            pbr: PbrBundle {
-                material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-                mesh: meshes.add(Mesh::from(shape::UVSphere {
-                    radius: 0.025,
-                    ..default()
-                })),
-                ..default()
-            },
-            node: RoadNode::default(),
-        })
-        .insert(Name::new("Start node"));
 }

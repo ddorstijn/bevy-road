@@ -1,17 +1,11 @@
 use bevy::prelude::*;
 
-#[derive(Component, Default)]
+#[derive(Component)]
 pub struct RoadController;
 
-#[derive(Bundle, Default)]
+#[derive(Bundle)]
 pub struct RoadControllerBundle {
     #[bundle]
-    pbr: PbrBundle,
-    controller: RoadController,
-}
-
-impl RoadController {
-    fn generate_mesh() {
-        todo!();
-    }
+    pub pbr: PbrBundle,
+    pub controller: RoadController,
 }
