@@ -1,16 +1,25 @@
 use bevy::prelude::*;
-use petgraph::stable_graph::EdgeIndex;
 
+#[derive(Reflect)]
 pub enum EdgeType {
     Connection,
     Transition,
 }
 
-pub struct EdgeWeight {
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+pub struct RoadEdge {
     pub r#type: EdgeType,
     pub length: f32,
     pub center: Option<Vec2>,
 }
 
-#[derive(Component, Default)]
-pub struct RoadEdge(pub EdgeIndex);
+impl Default for RoadEdge {
+    fn default() -> Self {
+        Self {
+            r#type: EdgeType::Connection,
+            length: 0.0,
+            center: None,
+        }
+    }
+}

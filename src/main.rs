@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{pbr::wireframe::WireframePlugin, prelude::*};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 pub mod flycam;
@@ -17,6 +17,7 @@ fn main() {
             watch_for_changes: true,
             ..default()
         }))
+        .add_plugin(WireframePlugin)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(WorldInspectorPlugin)

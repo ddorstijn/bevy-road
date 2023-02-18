@@ -1,10 +1,13 @@
 use bevy::prelude::*;
-use petgraph::graph::NodeIndex;
 
-pub struct NodeWeight {
-    pub group: Entity,
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+pub struct RoadNode {
     pub lanes: u8,
 }
 
-#[derive(Component, Default)]
-pub struct RoadNode(pub NodeIndex);
+impl Default for RoadNode {
+    fn default() -> Self {
+        Self { lanes: 1 }
+    }
+}
