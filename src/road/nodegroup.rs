@@ -74,3 +74,7 @@ fn get_point_on_bezier(t1: &Transform, t2: &Transform, t: f32) -> Vec3 {
 
     d.lerp(e, t)
 }
+
+fn get_point_on_clothoid(t1: &Transform, t2: &Transform, t: f32) -> Vec3 {
+    unimplemented!();
+}

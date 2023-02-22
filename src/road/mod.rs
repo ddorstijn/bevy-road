@@ -11,6 +11,8 @@ mod edge;
 mod node;
 mod nodegroup;
 
+mod curves;
+
 #[derive(Resource, Default)]
 pub struct RoadGraph(Graph<Entity, Entity>);
 
