@@ -1,4 +1,9 @@
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    render::{mesh, render_resource::PrimitiveTopology},
+};
+
+use super::curves::arc::{self, BiArc};
 
 #[derive(Reflect)]
 pub enum EdgeType {
@@ -101,4 +106,38 @@ fn generate_model(arc: Vec<Vec2>) -> Mesh {
     mesh.set_indices(Some(mesh::Indices::U32(indices)));
 
     mesh
+}
+
+#[derive(Component)]
+pub struct ControlPoint;
+fn draw_arc(
+    control_points: Query<(&Transform, &mut Handle<Mesh>), With<ControlPoint>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    let mut iter = control_points.into_iter();
+
+    let (t, mut m) = iter.next().unwrap();
+    let biarc = BiArc::new(t, iter.next().unwrap().0);
+
+    const DETAIL: usize = 20;
+
+    let positions = (0..DETAIL)
+        .map(|i| {
+            biarc
+                .interpolate(DETAIL as f32 / i as f32 * biarc.length())
+                .translation
+        })
+        .collect::<Vec<Vec3>>();
+
+    let normals = vec![Vec3::Y; DETAIL];
+
+    let indices = (0..DETAIL as u32).collect::<Vec<u32>>();
+
+    let mut mesh = Mesh::new(PrimitiveTopology::LineStrip);
+
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+    mesh.set_indices(Some(mesh::Indices::U32(indices)));
+
+    *m = meshes.add(mesh);
 }

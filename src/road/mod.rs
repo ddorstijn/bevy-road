@@ -7,11 +7,10 @@ use self::{
     nodegroup::{generate_intersection_mesh, RoadNodeGroup},
 };
 
+pub mod curves;
 mod edge;
 mod node;
 mod nodegroup;
-
-mod curves;
 
 #[derive(Resource, Default)]
 pub struct RoadGraph(Graph<Entity, Entity>);
@@ -33,6 +32,7 @@ fn test_scene(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut graph: ResMut<RoadGraph>,
 ) {
+    commands.spawn((PbrBundle::default()), 
     commands
         .spawn((
             PbrBundle {
@@ -49,6 +49,7 @@ fn test_scene(
         ))
         .with_children(|parent| {
             let node1 = parent
+
                 .spawn((
                     PbrBundle {
                         mesh: meshes.add(Mesh::from(shape::Box::new(0.5, 1.0, 1.0))),
