@@ -2,6 +2,7 @@ use std::f32::consts::PI;
 
 use bevy::prelude::*;
 
+#[derive(Default, Debug)]
 pub struct Arc {
     pub start: Vec3,
     pub end: Vec3,
@@ -11,6 +12,7 @@ pub struct Arc {
     pub length: f32,
 }
 
+#[derive(Default, Debug)]
 pub struct BiArc {
     pub arc1: Arc,
     pub arc2: Arc,
