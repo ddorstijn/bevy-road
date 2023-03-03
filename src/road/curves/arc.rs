@@ -42,13 +42,19 @@ impl BiArc {
     }
 
     pub fn interpolate(&self, distance: f32) -> Transform {
+        println!("distance: {}", distance);
         let (arc, dist) = match distance < self.arc1.length {
             true => (&self.arc1, distance),
             false => (&self.arc2, distance - self.arc1.length),
         };
 
-        let mut t = Transform::from_translation(arc.center + arc.start);
-        t.rotate_axis(Vec3::Y, dist);
+        let mut t = Transform::from_translation(arc.start);
+        println!("start: {:?}", t);
+        t.rotate_y(dist / arc.radius);
+        println!("rotated: {:?}", t);
+        t.translation += arc.center;
+        println!("center added: {:?}", t);
+
         t
     }
 }

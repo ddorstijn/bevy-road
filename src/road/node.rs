@@ -1,5 +1,7 @@
 use bevy::{ecs::system::EntityCommands, prelude::*};
-use petgraph::{graph::NodeIndex, Graph};
+use petgraph::graph::NodeIndex;
+
+use super::RoadGraph;
 
 #[derive(Reflect)]
 pub enum NodeType {
@@ -13,10 +15,13 @@ pub struct RoadNode {
     pub index: NodeIndex,
 }
 
+#[derive(Component)]
+pub struct RoadNodeGroup;
+
 impl RoadNode {
     pub fn new(
         mut commands: EntityCommands,
-        graph: &mut Graph<Entity, Entity>,
+        graph: &mut ResMut<RoadGraph>,
         r#type: NodeType,
     ) -> NodeIndex {
         let index = graph.add_node(commands.id());
