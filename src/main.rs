@@ -1,27 +1,21 @@
 use bevy::{pbr::wireframe::WireframePlugin, prelude::*};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
-pub mod flycam;
 use bevy_rapier3d::{
     prelude::{Collider, CollisionGroups, Group, NoUserData, RapierPhysicsPlugin},
     render::RapierDebugRenderPlugin,
 };
-use flycam::{pan_orbit_camera, PanOrbitCamera};
 use road::RoadPlugin;
 
 pub mod road;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(AssetPlugin {
-            watch_for_changes: true,
-            ..default()
-        }))
-        .add_plugin(WireframePlugin)
-        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(RapierDebugRenderPlugin::default())
-        .add_plugin(WorldInspectorPlugin)
-        .add_plugin(GamePlugin)
+        .add_plugins(DefaultPlugins)
+        .add_plugins((WireframePlugin, WorldInspectorPlugin::default()))
+        .add_plugins((RapierPhysicsPlugin::<NoUserData>::default(), RapierDebugRenderPlugin::default()))
+        .add_plugins(GamePlugin)
         .run();
 }
 
@@ -29,9 +23,9 @@ struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(RoadPlugin)
-            .add_startup_system(setup_scene)
-            .add_system(pan_orbit_camera);
+        app.add_plugins(PanOrbitCameraPlugin)
+            .add_plugins(RoadPlugin)
+            .add_systems(Startup, setup_scene);
     }
 }
 
@@ -40,35 +34,19 @@ fn setup_scene(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let translation = Vec3::new(-2.0, 2.5, 5.0);
-    let radius = translation.length();
-
     // Environment and player
-    commands
-        .spawn(Camera3dBundle {
-            transform: Transform::from_translation(translation).looking_at(Vec3::ZERO, Vec3::Y),
-            ..Default::default()
-        })
-        .insert(PanOrbitCamera {
-            radius,
-            ..Default::default()
-        })
-        .insert(Name::new("Player"));
+    commands.spawn((
+        Camera3dBundle {
+            transform: Transform::from_translation(Vec3::new(0.0, 1.5, 5.0)),
+            ..default()
+        },
+        PanOrbitCamera::default(),
+        Name::new("Player")
+    ));
 
-    const HALF_SIZE: f32 = 10.0;
-    commands
-        .spawn(DirectionalLightBundle {
+    commands.spawn((
+        DirectionalLightBundle {
             directional_light: DirectionalLight {
-                // Configure the projection to better fit the scene
-                shadow_projection: OrthographicProjection {
-                    left: -HALF_SIZE,
-                    right: HALF_SIZE,
-                    bottom: -HALF_SIZE,
-                    top: HALF_SIZE,
-                    near: -10.0 * HALF_SIZE,
-                    far: 10.0 * HALF_SIZE,
-                    ..default()
-                },
                 shadows_enabled: true,
                 ..default()
             },
@@ -78,19 +56,22 @@ fn setup_scene(
                 ..default()
             },
             ..default()
-        })
-        .insert(Name::new("Sun"));
-    commands
-        .spawn(PbrBundle {
+        },
+        Name::new("Sun")
+    ));
+
+    commands.spawn((
+        PbrBundle {
             material: materials.add(Color::rgb(0.0, 0.4, 0.4).into()),
-            mesh: meshes.add(Mesh::from(shape::Plane { size: 20. })),
+            mesh: meshes.add(Mesh::from(shape::Plane { size: 20., ..default() })),
             transform: Transform::from_xyz(0.0, -1.0, 0.0),
             ..default()
-        })
-        .insert(Collider::cuboid(10.0, 0.01, 10.0))
-        .insert(CollisionGroups::new(
+        },
+        Collider::cuboid(10.0, 0.01, 10.0),
+        CollisionGroups::new(
             Group::GROUP_1.into(),
             Group::GROUP_1.into(),
-        ))
-        .insert(Name::new("Ground"));
+        ),
+        Name::new("Ground")
+    ));
 }

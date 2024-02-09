@@ -18,8 +18,8 @@ pub struct RoadPlugin;
 impl Plugin for RoadPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<RoadGraph>()
-            .add_startup_system(test_scene)
-            .add_system(update_node_edges);
+            .add_systems(Startup, test_scene)
+            .add_systems(Update, update_node_edges);
     }
 }
 
