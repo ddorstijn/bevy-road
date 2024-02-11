@@ -67,6 +67,23 @@ fn test_arc_scene(mut commands: Commands,
     lines.line(Vec3::new(0., 0., -1.), Vec3::new(0., 0., 1.), f32::INFINITY);
 }
 
+fn generate_arc_points(start: Vec3, end: Vec3, center: Vec3) -> Vec<Vec3> {
+    let start_angle = (start - center).angle_between(Vec3::X);
+    let end_angle = (end - center).angle_between(Vec3::X);
+    let radius = (start - center).length();
+
+    let num_points = 20;
+    let angle_step = (end_angle - start_angle) / (num_points - 1) as f32;
+
+    (0..num_points).map(|i| {
+        let angle = start_angle + i as f32 * angle_step;
+        let x = center.x + radius * angle.cos();
+        let y = center.z + radius * angle.sin();
+
+        Vec3::new(x, 0., y)
+    }).collect::<Vec<Vec3>>()
+}
+
 fn update_test_scene(mut query: Query<(&GlobalTransform, &mut Transform, &Name)>, mut lines: ResMut<DebugLines>) {
     let mut q = query.iter_mut();
     let from = q.find(|(_, _, name)| name.as_str() == "From").unwrap();
@@ -76,11 +93,11 @@ fn update_test_scene(mut query: Query<(&GlobalTransform, &mut Transform, &Name)>
     let midpoint = (to.1.translation + from.1.translation) / 2.0;
     let direction = to.1.translation - from.1.translation;
     
-    let normal = direction.any_orthogonal_vector().normalize().xz();
+    let normal = direction.any_orthogonal_vector().normalize();
 
-    let intersection = intersection(from.1.translation.xz(), from.0.right().xz(), midpoint.xz(), normal).unwrap_or_else(|| midpoint.xz());
+    let intersection = intersection(from.1.translation.xz(), from.0.right().xz(), midpoint.xz(), normal.xz()).unwrap_or_else(|| midpoint.xz());
     projection.1.translation = Vec3::new(intersection.x, 0., intersection.y);
-
+    
     // Show right direction
     lines.line_colored(from.1.translation, from.1.translation + from.0.right() * 10., 0., Color::PINK);
 
@@ -88,5 +105,11 @@ fn update_test_scene(mut query: Query<(&GlobalTransform, &mut Transform, &Name)>
     lines.line_colored(from.1.translation, to.1.translation, 0., Color::CRIMSON);
 
     // Show bisector
-    lines.line_colored(midpoint + Vec3::new(normal.x, 0., normal.y) * -5., midpoint + Vec3::new(normal.x, 0., normal.y) * 5., 0., Color::AQUAMARINE);
+    lines.line_colored(midpoint + normal * -5., midpoint + normal * 5., 0., Color::AQUAMARINE);
+
+    let positions = generate_arc_points(from.1.translation, to.1.translation, projection.1.translation);
+
+    positions.iter().for_each(|p| {
+        lines.line(projection.1.translation, *p, 0.);
+    })
 }
