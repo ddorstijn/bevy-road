@@ -406,6 +406,7 @@ dependencies = [
  "bevy-inspector-egui",
  "bevy_mod_raycast",
  "bevy_panorbit_camera",
+ "bevy_prototype_debug_lines",
  "bevy_rapier3d",
  "itertools",
  "petgraph",
@@ -854,9 +855,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_panorbit_camera"
-version = "0.11.1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4403ee303a2292e7f9b0a74804e664642647c657b725dc7d90bf9d9ace018f5"
+checksum = "bd7c85a6fe79f417ffe46ac3d75619327fa78add52ef9f21c5129d4f6336afd8"
 dependencies = [
  "bevy",
  "bevy_easings",
@@ -887,6 +888,14 @@ dependencies = [
  "radsort",
  "smallvec",
  "thread_local",
+]
+
+[[package]]
+name = "bevy_prototype_debug_lines"
+version = "0.11.1"
+source = "git+https://github.com/Sophya/bevy_debug_lines.git?branch=fix/upgrade-bevy-0.12#51f8d9bdd68198e1b095be71b12e3f18ae32a221"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
@@ -1695,9 +1704,9 @@ dependencies = [
 
 [[package]]
 name = "either"
-version = "1.9.0"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
+checksum = "11157ac094ffbdde99aa67b23417ebdd801842852b500e395a45a9c0aac03e4a"
 
 [[package]]
 name = "emath"

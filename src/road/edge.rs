@@ -5,7 +5,7 @@ use bevy::{
 };
 use petgraph::graph::{EdgeIndex, NodeIndex};
 
-use super::{curves::arc::BiArc, node::RoadNode, RoadGraph};
+use super::{curves::biarc::BiArc, node::RoadNode, RoadGraph};
 
 #[derive(Component, Default, Debug)]
 pub struct RoadEdge {

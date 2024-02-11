@@ -3,12 +3,13 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
 use bevy_rapier3d::{
-    prelude::{Collider, CollisionGroups, Group, NoUserData, RapierPhysicsPlugin},
-    render::RapierDebugRenderPlugin,
+    prelude::{Collider, CollisionGroups, Group, NoUserData, RapierPhysicsPlugin}, render::RapierDebugRenderPlugin
 };
-use road::RoadPlugin;
+use debug::DebugPlugin;
+//use road::RoadPlugin;
 
 pub mod road;
+mod debug;
 
 fn main() {
     App::new()
@@ -24,7 +25,8 @@ struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(PanOrbitCameraPlugin)
-            .add_plugins(RoadPlugin)
+            // .add_plugins(RoadPlugin)
+            .add_plugins(DebugPlugin)
             .add_systems(Startup, setup_scene);
     }
 }
