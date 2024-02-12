@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::prelude::*;
 use bevy_prototype_debug_lines::*;
 
@@ -40,47 +42,51 @@ fn test_arc_scene(mut commands: Commands,
     lines.line(Vec3::new(0., 0., -0.1), Vec3::new(0., 0., 0.1), f32::INFINITY);
 }
 
-fn intersection(point1: Vec2, dir1: Vec2, point2: Vec2, dir2: Vec2) -> Option<Vec2> {
-    let mat_a = Mat2::from_cols(dir1, dir2 * -1.0);
-    
-    if let Ok(inverse) = std::panic::catch_unwind(|| mat_a.inverse()) { 
-        let rhs = point2 - point1;
-        let result = inverse * rhs;
 
-        Some(point1 + dir1 * result.x)
+fn line_line_intersection(p1: Vec3, d1: Vec3, p2: Vec3, d2: Vec3) -> Option<Vec3> {
+    let direction = p2 - p1;
+    let cross1 = d1.cross(d2);
+    let cross2 = direction.cross(d2);
+
+    let planar_factor = direction.dot(cross1).abs();
+
+    //is coplanar, and not parrallel
+    if planar_factor < 0.0001 && cross1.length_squared() > 0.0001 {
+        let s = cross2.dot(cross1) / cross1.length_squared();
+        Some(p1 + (d1 * s))
     } else {
         None
     }
 }
 
-fn generate_arc_points(start: Vec2, end: Vec2, center: Vec2, clockwise: bool) -> Vec<Vec2> {
+
+fn generate_arc_points(start: Vec3, end: Vec3, center: Vec3, clockwise: bool) -> Vec<Vec3> {
     let radius = (start - center).length();
-    let mut start_angle = (start.y - center.y).atan2(start.x - center.x);
-    let mut end_angle = (end.y - center.y).atan2(end.x - center.x);
+    let start_angle = (start.z - center.z).atan2(start.x - center.x);
+    let end_angle = (end.z - center.z).atan2(end.x - center.x);
 
-    if clockwise {
-        if start_angle < end_angle {
-            start_angle += 2.0 * std::f32::consts::PI;
-        }
-    } else {
-        if end_angle < start_angle {
-            end_angle += 2.0 * std::f32::consts::PI;
-        }
-    }
+    let (start_angle, end_angle) = match clockwise {
+        true if start_angle < end_angle => (start_angle + 2.0 * PI, end_angle),
+        false if end_angle < start_angle => (start_angle, end_angle + 2.0 * PI),
+        _ => (start_angle, end_angle),
+    };
 
-    let mut points = Vec::new();
+    // Calculate the total arc length
+    let arc_length = radius * (end_angle - start_angle).abs();
 
-    // We'll generate points every radian along the arc
-    let step = if clockwise { -0.01 } else { 0.01 };
-    let mut angle = start_angle;
-    while (clockwise && angle >= end_angle) || (!clockwise && angle <= end_angle) {
+    // Calculate the number of steps, ensuring there is approximately 1 unit arc length between points
+    let num_steps = arc_length.ceil() as usize;
+
+    // Adjust the step size based on the total arc length and number of steps
+    let step = (end_angle - start_angle).abs() / num_steps as f32;
+
+    (0..=num_steps).map(|i| {
+        let angle = start_angle + step * i as f32;
         let x = center.x + radius * angle.cos();
-        let y = center.y + radius * angle.sin();
-        points.push(Vec2::new(x, y));
-        angle += step;
-    }
-
-    points
+        let y = center.y; // Assuming the arc is in the xz-plane
+        let z = center.z + radius * angle.sin();
+        Vec3::new(x, y, z)
+    }).collect()
 }
 
 
@@ -94,10 +100,10 @@ fn update_test_scene(mut query: Query<(&GlobalTransform, &mut Transform, &Name)>
     
     let normal = direction.any_orthogonal_vector().normalize();
 
-    let intersection = intersection(from.1.translation.xz(), from.0.right().xz(), midpoint.xz(), normal.xz()).unwrap_or_else(|| midpoint.xz());
-    
-    let positions = generate_arc_points(from.1.translation.xz(), to.1.translation.xz(), intersection, from.0.forward().xz().angle_between(direction.xz()).is_sign_negative());
+    let intersection = line_line_intersection(from.1.translation, from.0.right(), midpoint, normal).unwrap_or_else(|| midpoint);
+
+    let positions = generate_arc_points(from.1.translation, to.1.translation, intersection, from.0.forward().angle_between(direction).is_sign_negative());
     positions.iter().for_each(|p| {
-        lines.line(intersection.extend(0.).xzy(), p.extend(0.0).xzy(), 0.);
+        lines.line(intersection, *p, 0.);
     })
 }
