@@ -1,22 +1,22 @@
 use bevy::{pbr::wireframe::WireframePlugin, prelude::*};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
+use bevy_mod_picking::prelude::*;
 
-use bevy_rapier3d::{
-    prelude::{Collider, CollisionGroups, Group, NoUserData, RapierPhysicsPlugin}, render::RapierDebugRenderPlugin
-};
-use debug::DebugPlugin;
+// use debug::DebugPlugin;
 //use road::RoadPlugin;
 
-pub mod road;
-mod debug;
+// pub mod road;
+// mod debug;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugins((WireframePlugin, WorldInspectorPlugin::default()))
-        .add_plugins((RapierPhysicsPlugin::<NoUserData>::default(), RapierDebugRenderPlugin::default()))
-        .add_plugins(GamePlugin)
+        .add_plugins((
+            DefaultPlugins.set(low_latency_window_plugin()),
+            DefaultPickingPlugins,
+            WireframePlugin,
+            WorldInspectorPlugin::default(),
+            GamePlugin
+        ))
         .run();
 }
 
@@ -24,9 +24,10 @@ struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(PanOrbitCameraPlugin)
+        app
             // .add_plugins(RoadPlugin)
-            .add_plugins(DebugPlugin)
+            // .add_plugins(DebugPlugin)
+
             .add_systems(Startup, setup_scene);
     }
 }
@@ -42,7 +43,6 @@ fn setup_scene(
             transform: Transform::from_translation(Vec3::new(0.0, 5., 0.0)).looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
         },
-        PanOrbitCamera::default(),
         Name::new("Player")
     ));
 
@@ -69,11 +69,17 @@ fn setup_scene(
             transform: Transform::from_xyz(0.0, -1.0, 0.0),
             ..default()
         },
-        Collider::cuboid(10.0, 0.01, 10.0),
-        CollisionGroups::new(
-            Group::GROUP_1.into(),
-            Group::GROUP_1.into(),
-        ),
+        // PickableBundle::default(), // Optional: adds selection, highlighting, and helper components.
+        On::<Pointer<Click>>::target_commands_mut(|click, _target_commands| {
+            println!("{:?}", click);
+        }),
         Name::new("Ground")
     ));
+}
+
+pub struct RaycastPlugin;
+impl Plugin for RaycastPlugin {
+    fn build(&self, app: &mut App) {
+        // app.add_systems(Update, raycast);
+    }
 }
