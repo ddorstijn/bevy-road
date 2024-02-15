@@ -1,78 +1,92 @@
-use bevy::{
-    ecs::system::EntityCommands,
-    prelude::*,
-    render::{mesh, render_resource::PrimitiveTopology},
-};
-use petgraph::graph::{EdgeIndex, NodeIndex};
+use std::f32::consts::PI;
 
-use super::{curves::biarc::BiArc, node::RoadNode, RoadGraph};
+use bevy::prelude::*;
+use bevy::render::render_resource::PrimitiveTopology;
 
-#[derive(Component, Default, Debug)]
+#[derive(Component, Debug)]
 pub struct RoadEdge {
-    arc: BiArc,
-    index: EdgeIndex,
+    start: GlobalTransform,
+    center: Vec3,
+    radius: f32,
+    length: f32,
 }
 
 impl RoadEdge {
-    pub fn new(
-        mut commands: EntityCommands,
-        graph: &mut ResMut<RoadGraph>,
-        start: NodeIndex,
-        end: NodeIndex,
-    ) -> EdgeIndex {
-        let index = graph.add_edge(start, end, commands.id());
-        commands.insert(Self { index, ..default() });
+    pub fn new(start: &GlobalTransform, endpoint: Vec3) -> Self {
+        let startpoint = start.translation();
+        let midpoint: Vec3 = (endpoint + startpoint) / 2.0;
+        let bisector: Vec3 = (endpoint - startpoint).any_orthogonal_vector().normalize();
 
-        index
+        let direction = midpoint - startpoint;
+        let cross1 = start.right().cross(bisector);
+        let cross2 = direction.cross(bisector);
+    
+        let planar_factor = direction.dot(cross1).abs();
+    
+        //is coplanar, and not parrallel
+        let (center, radius) = match planar_factor < 0.0001 && cross1.length_squared() > 0.0001 {
+            true => {
+                let s = cross2.dot(cross1) / cross1.length_squared();
+                let center = startpoint + start.right() * s;
+                (center, (startpoint - center).length())
+            },
+            false => (midpoint,  0.0)
+        };
+
+        let clockwise = start.forward().angle_between(endpoint - startpoint).is_sign_negative();
+        let start_angle = (startpoint.z - center.z).atan2(startpoint.x - center.x);
+        let end_angle = (endpoint.z - center.z).atan2(endpoint.x - center.x);
+        let (start_angle, end_angle) = match clockwise {
+            true if start_angle < end_angle => (start_angle + 2.0 * PI, end_angle),
+            false if end_angle < start_angle => (start_angle, end_angle + 2.0 * PI),
+            _ => (start_angle, end_angle),
+        };
+
+        Self {
+            start: start.clone(),
+            center,
+            radius,
+            length: radius * (end_angle - start_angle).abs(),
+        }
     }
 
-    fn generate_mesh(&self) -> Mesh {
-        const DETAIL: usize = 20;
+    fn interpolate_arc(&self, length: f32) -> Transform {   
+       let mut transform = self.start.compute_transform();
+       transform.rotate_around(self.center, Quat::from_axis_angle(self.start.up(), length / self.radius));
+       transform
+    }
 
-        let positions = (0..=DETAIL)
-            .map(|i| {
-                self.arc
-                    .interpolate(DETAIL as f32 / i as f32 * self.arc.length())
-                    .translation
-            })
-            .collect::<Vec<Vec3>>();
+    fn interpolate_line(&self, length: f32) -> Transform {
+        self.start.compute_transform().with_translation(self.start.forward() * length)
+    }
 
-        positions.iter().for_each(|p| println!("{}", p));
+    pub fn interpolate(&self, length: f32) -> Transform {
+        match self.radius < 0.005 {
+            true => self.interpolate_line(length),
+            false =>  self.interpolate_arc(length)
+        }
+    }
 
-        let normals = vec![Vec3::Y; DETAIL + 1];
-        let indices = (0..=DETAIL as u32).collect::<Vec<u32>>();
+    pub fn get_end_transform(&self) -> Transform {
+        self.interpolate(self.length)
+    }
+
+    pub fn recalculate(&mut self, endpoint: Vec3) {
+        *self = Self::new(&self.start, endpoint);
+    }
+    
+    pub fn generate_mesh(&self) -> Mesh {    
+        let points = (0..=self.length.ceil() as usize).map(|i| self.interpolate_arc(i as f32).translation).collect::<Vec<Vec3>>();
+        
+        let detail = points.len();
+        let normals = vec![Vec3::Y; detail];
+        let indices = (0..=detail as u32).collect::<Vec<u32>>();
         let mut mesh = Mesh::new(PrimitiveTopology::LineStrip);
 
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, points);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
-        mesh.set_indices(Some(mesh::Indices::U32(indices)));
+        mesh.set_indices(Some(bevy::render::mesh::Indices::U32(indices)));
 
         mesh
-    }
-}
-
-pub fn update_node_edges(
-    mut changed_nodes: Query<(&mut Handle<Mesh>, &RoadNode), Changed<RoadNode>>,
-    nodes: Query<&Transform, With<RoadNode>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut edges: Query<&mut RoadEdge>,
-    graph: Res<RoadGraph>,
-) {
-    for (mut handle, node) in &mut changed_nodes {
-        let outgoing = graph.edges_directed(node.index, petgraph::Direction::Outgoing);
-        let incoming = graph.edges_directed(node.index, petgraph::Direction::Incoming);
-
-        for edge_ref in outgoing.chain(incoming) {
-            let mut edge = edges.get_mut(*edge_ref.weight()).unwrap();
-
-            let endpoints = graph.edge_endpoints(edge.index).unwrap();
-            let t_start = nodes.get(*graph.node_weight(endpoints.0).unwrap()).unwrap();
-            let t_end = nodes.get(*graph.node_weight(endpoints.1).unwrap()).unwrap();
-
-            edge.arc = BiArc::new(t_start, t_end);
-            println!("{:?}", edge.arc);
-
-            *handle = meshes.add(edge.generate_mesh());
-        }
     }
 }

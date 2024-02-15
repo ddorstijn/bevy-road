@@ -1,8 +1,5 @@
-use bevy::{
-    input::mouse::{MouseMotion, MouseWheel},
-    prelude::*,
-    window::PrimaryWindow,
-};
+use bevy::{input::mouse::{MouseMotion, MouseWheel}, window::PrimaryWindow};
+use bevy::prelude::*;
 
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {

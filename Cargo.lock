@@ -405,9 +405,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy-inspector-egui",
- "bevy_prototype_debug_lines",
  "bevy_rapier3d",
- "itertools",
  "petgraph",
 ]
 
@@ -854,14 +852,6 @@ dependencies = [
  "radsort",
  "smallvec",
  "thread_local",
-]
-
-[[package]]
-name = "bevy_prototype_debug_lines"
-version = "0.11.1"
-source = "git+https://github.com/Sophya/bevy_debug_lines.git?branch=fix/upgrade-bevy-0.12#51f8d9bdd68198e1b095be71b12e3f18ae32a221"
-dependencies = [
- "bevy",
 ]
 
 [[package]]
