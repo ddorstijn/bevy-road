@@ -35,7 +35,7 @@ fn setup_scene(
     // Environment and player
     commands.spawn((
         Camera3dBundle {
-            transform: Transform::from_translation(Vec3::new(0.0, 5., 0.0))
+            transform: Transform::from_translation(Vec3::new(0.0, 5., 1.0))
                 .looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
         },
@@ -81,11 +81,16 @@ fn setup_scene(
                 size: 0.5,
                 ..default()
             })),
-            transform: Transform::from_translation(Vec3::ZERO),
+            transform: Transform {
+                translation: Vec3::new(1.0, 0.0, 1.0),
+                rotation: Quat::from_rotation_y(-std::f32::consts::PI / 4.),
+                ..default()
+            },
             ..default()
         },
         Collider::cuboid(0.5, 0.5, 0.5),
         CollisionGroups::new(Group::GROUP_2, Group::GROUP_1),
+        Name::new("Road Spawner"),
         RoadSpawner,
     ));
 }

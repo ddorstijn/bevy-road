@@ -1,9 +1,11 @@
 use bevy::prelude::*;
 use petgraph::graph::Graph;
 
+use self::edge::RoadEdge;
+
 mod placeholder;
 pub mod node;
-mod edge;
+pub mod edge;
 
 
 #[derive(Resource, Default, Deref, DerefMut)]
@@ -14,6 +16,7 @@ impl Plugin for RoadPlugin {
     fn build(&self, app: &mut App) {
         app
             .init_resource::<RoadGraph>()
+            .register_type::<RoadEdge>()
             .add_plugins(placeholder::PlaceholderPlugin);
     }
 }

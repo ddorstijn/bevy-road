@@ -40,12 +40,9 @@ fn handle_build_selection(
 
     commands.spawn((
         Name::new("RoadPlaceholder"),
-        PbrBundle {
-            transform: Transform::from_translation(hitpoint),
-            ..default()
-        },
+        PbrBundle::default(),
         RoadPlaceholder,
-        RoadEdge::new(start, hitpoint),
+        RoadEdge::new(start, hitpoint, None),
     ));
 }
 
@@ -56,6 +53,8 @@ fn move_road_placeholder(
     rapier_context: Res<RapierContext>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<PanOrbitCamera>>,
+
+    gizmos: Gizmos,
 
     mut query: Query<(&mut Handle<Mesh>, &mut RoadEdge), With<RoadPlaceholder>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -72,8 +71,7 @@ fn move_road_placeholder(
         return;
     };
 
-    edge.recalculate(hitpoint);
-    println!("{:?}",edge);
+    edge.recalculate(hitpoint, Some(gizmos));
     *handle = meshes.add(edge.generate_mesh());
 }
 
