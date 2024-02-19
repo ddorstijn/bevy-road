@@ -21,6 +21,15 @@ impl Plugin for PlaceholderPlugin {
                     .in_set(BuildSystemSet::Building),
             ),
         )
+        .add_systems(
+            OnExit(GameState::Building),
+            (
+                remove_placeholder.run_if(any_with_component::<RoadPlaceholder>()),
+                hide_nodes,
+            )
+                .in_set(BuildSystemSet::ExitBuildMode),
+        )
+        .add_systems(OnEnter(GameState::Building), show_nodes)
         .configure_sets(
             Update,
             (
@@ -28,12 +37,16 @@ impl Plugin for PlaceholderPlugin {
                 BuildSystemSet::Building.run_if(any_with_component::<RoadPlaceholder>()),
             )
                 .run_if(in_state(GameState::Building)),
-        );
+        )
+        .configure_sets(OnEnter(GameState::Building), BuildSystemSet::EnterBuildMode)
+        .configure_sets(OnExit(GameState::Building), BuildSystemSet::ExitBuildMode);
     }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Hash, SystemSet)]
 enum BuildSystemSet {
+    EnterBuildMode,
+    ExitBuildMode,
     Building,
     NotBuilding,
 }
@@ -101,40 +114,40 @@ fn move_road_placeholder(
     }
 }
 
-fn adjust_lanes(mut query: Query<&mut RoadEdge, With<RoadPlaceholder>>, keys: Res<Input<KeyCode>>,) {
+fn adjust_lanes(mut query: Query<&mut RoadEdge, With<RoadPlaceholder>>, keys: Res<Input<KeyCode>>) {
     let mut edge = query.single_mut();
     if keys.just_pressed(KeyCode::Key1) {
         edge.lanes = 1
     }
-    
+
     if keys.just_pressed(KeyCode::Key2) {
         edge.lanes = 2
     }
-    
+
     if keys.just_pressed(KeyCode::Key3) {
         edge.lanes = 3
     }
-    
+
     if keys.just_pressed(KeyCode::Key4) {
         edge.lanes = 4
     }
-    
+
     if keys.just_pressed(KeyCode::Key5) {
         edge.lanes = 5
     }
-    
+
     if keys.just_pressed(KeyCode::Key6) {
         edge.lanes = 6
     }
-    
+
     if keys.just_pressed(KeyCode::Key7) {
         edge.lanes = 7
     }
-    
+
     if keys.just_pressed(KeyCode::Key8) {
         edge.lanes = 8
     }
-    
+
     if keys.just_pressed(KeyCode::Key9) {
         edge.lanes = 9
     }
@@ -155,7 +168,7 @@ fn finalize_road(
 
     for lane in 0..edge.lanes {
         let end = edge.get_end_transform(Some(lane));
-    
+
         const NODE_END_HALF_WIDTH: f32 = 0.20;
         let id = commands
             .spawn((
@@ -168,13 +181,35 @@ fn finalize_road(
                     transform: end,
                     ..default()
                 },
-                Collider::cuboid(NODE_END_HALF_WIDTH, NODE_END_HALF_WIDTH, NODE_END_HALF_WIDTH),
+                Collider::cuboid(
+                    NODE_END_HALF_WIDTH,
+                    NODE_END_HALF_WIDTH,
+                    NODE_END_HALF_WIDTH,
+                ),
                 CollisionGroups::new(Group::GROUP_2, Group::GROUP_1),
                 Name::new(format!("Road Endpoint lane {}", lane)),
                 RoadSpawner,
             ))
             .id();
-    
+
         commands.entity(entity).add_child(id);
+    }
+}
+
+fn remove_placeholder(mut commands: Commands, query: Query<Entity, With<RoadPlaceholder>>) {
+    let entity = query.single();
+
+    commands.entity(entity).despawn_recursive();
+}
+
+fn hide_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
+    for mut visibility in query.iter_mut() {
+        *visibility = Visibility::Hidden;
+    }
+}
+
+fn show_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
+    for mut visibility in query.iter_mut() {
+        *visibility = Visibility::Visible;
     }
 }
