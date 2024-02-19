@@ -3,7 +3,7 @@ use bevy_rapier3d::prelude::*;
 
 use crate::{camera::PanOrbitCamera, states::GameState, utility::cast_ray_from_cursor};
 
-use super::edge::RoadEdge;
+use super::{edge::RoadEdge, node::RoadSpawner};
 
 pub struct PlaceholderPlugin;
 impl Plugin for PlaceholderPlugin {
@@ -13,13 +13,29 @@ impl Plugin for PlaceholderPlugin {
             (
                 handle_build_selection
                     .run_if(input_just_released(MouseButton::Left))
-                    .run_if(not(any_with_component::<RoadPlaceholder>())),
-                move_road_placeholder.run_if(any_with_component::<RoadPlaceholder>()),
-                // finalize_road,
+                    .in_set(BuildSystemSet::NotBuilding),
+                (
+                    move_road_placeholder,
+                    finalize_road.run_if(input_just_released(MouseButton::Left)),
+                )
+                    .in_set(BuildSystemSet::Building),
+            ),
+        )
+        .configure_sets(
+            Update,
+            (
+                BuildSystemSet::NotBuilding.run_if(not(any_with_component::<RoadPlaceholder>())),
+                BuildSystemSet::Building.run_if(any_with_component::<RoadPlaceholder>()),
             )
                 .run_if(in_state(GameState::Building)),
         );
     }
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Hash, SystemSet)]
+enum BuildSystemSet {
+    Building,
+    NotBuilding,
 }
 
 fn handle_build_selection(
@@ -33,7 +49,10 @@ fn handle_build_selection(
     let filter = QueryFilter::default();
 
     let Some((entity, hitpoint)) =
-        cast_ray_from_cursor(rapier_context, window_query, camera_query, filter) else { return; };
+        cast_ray_from_cursor(rapier_context, window_query, camera_query, filter)
+    else {
+        return;
+    };
     let Ok(start) = node_query.get(entity) else {
         return;
     };
@@ -50,7 +69,7 @@ fn handle_build_selection(
 }
 
 #[derive(Component)]
-struct RoadPlaceholder;
+pub struct RoadPlaceholder;
 
 fn move_road_placeholder(
     rapier_context: Res<RapierContext>,
@@ -72,22 +91,47 @@ fn move_road_placeholder(
         return;
     };
 
-    let point = transform.compute_matrix().inverse().transform_point(hitpoint);
+    let point = transform
+        .compute_matrix()
+        .inverse()
+        .transform_point(hitpoint);
     *edge = RoadEdge::new(point);
     if point.angle_between(Vec3::Z) > 0.001 {
         *handle = meshes.add(edge.generate_mesh());
     }
 }
 
-// fn finalize_road(
-//     mut commands: Commands,
-//     query: Query<(Entity, &RoadEdge, &Transform), With<RoadPlaceholder>>,
-// ) {
-//     let Ok((entity, edge, transform)) = query.get_single() else {
-//         return;
-//     };
+fn finalize_road(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 
-//     let final_edge = edge;
+    query: Query<(Entity, &RoadEdge), With<RoadPlaceholder>>,
+) {
+    let Ok((entity, edge)) = query.get_single() else {
+        return;
+    };
 
-//     commands.entity(entity).remove::<RoadPlaceholder>();
-// }
+    let end = edge.get_end_transform();
+
+    let id = commands
+        .spawn((
+            PbrBundle {
+                material: materials.add(Color::rgb(1.0, 1.0, 0.0).into()),
+                mesh: meshes.add(Mesh::from(shape::Cube {
+                    size: 0.5,
+                    ..default()
+                })),
+                transform: end,
+                ..default()
+            },
+            Collider::cuboid(0.5, 0.5, 0.5),
+            CollisionGroups::new(Group::GROUP_2, Group::GROUP_1),
+            Name::new("Road Endpoint"),
+            RoadSpawner,
+        ))
+        .id();
+
+    commands.entity(entity).add_child(id);
+    commands.entity(entity).remove::<RoadPlaceholder>();
+}

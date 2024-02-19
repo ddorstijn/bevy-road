@@ -70,7 +70,7 @@ fn setup_scene(
                 size: 20.,
                 ..default()
             })),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
+            transform: Transform::from_xyz(0.0, -0.1, 0.0),
             ..default()
         },
         Collider::cuboid(10.0, 0.1, 10.0),
@@ -86,7 +86,7 @@ fn setup_scene(
                 ..default()
             })),
             transform: Transform {
-                translation: Vec3::new(0.0, 0.1, 0.0),
+                translation: Vec3::new(0.0, 0.0, 0.0),
                 rotation: Quat::from_axis_angle(Vec3::Y, -PI / 2.0),
                 ..default()
             },

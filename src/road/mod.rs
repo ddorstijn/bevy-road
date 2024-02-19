@@ -3,7 +3,7 @@ use petgraph::graph::Graph;
 
 use self::edge::RoadEdge;
 
-mod placeholder;
+pub mod placeholder;
 pub mod node;
 pub mod edge;
 

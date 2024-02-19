@@ -3,6 +3,7 @@ use std::f32::consts::PI;
 use bevy::prelude::*;
 
 use crate::road::edge::RoadEdge;
+use crate::road::placeholder::RoadPlaceholder;
 
 pub struct DebugPlugin;
 impl Plugin for DebugPlugin {
@@ -12,7 +13,7 @@ impl Plugin for DebugPlugin {
     }
 }
 
-fn debug_edges(edge_query: Query<(&GlobalTransform, &RoadEdge)>, mut gizmos: Gizmos) {
+fn debug_edges(edge_query: Query<(&GlobalTransform, &RoadEdge), With<RoadPlaceholder>>, mut gizmos: Gizmos) {
     for (transform, edge) in edge_query.iter() {
         // println!("basis: {}, left: {}, forward: {}", transform.translation(), transform.left(), transform.forward());
         // gizmos.line(transform.translation(), transform.translation() + transform.right(), Color::WHITE);
