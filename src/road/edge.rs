@@ -5,6 +5,7 @@ use bevy::render::render_resource::PrimitiveTopology;
 
 const PRECISION: f32 = 0.001;
 const ROAD_WIDTH: f32 = 0.5;
+const RESOLUTION: usize = 5;
 
 #[derive(Component, Debug, Default, Reflect)]
 #[reflect(Component, Default)]
@@ -102,7 +103,6 @@ impl RoadEdge {
     }
 
     pub fn generate_mesh(&self) -> Mesh {
-        const RESOLUTION: usize = 10;
         let n = self.length.ceil() as usize * RESOLUTION;
         let points = (0..=n)
             .flat_map(|i| {
@@ -116,8 +116,11 @@ impl RoadEdge {
             .collect::<Vec<Vec3>>();
 
         let normals = vec![Vec3::Y; points.len()];
-        let indices = (0..n as u32 * 2 - 1)
-            .flat_map(|i| [i, i + 1, i + 2, i + 1, i + 3, i + 2])
+        let indices = (0..n as u32 * 2 - 1).step_by(2)
+            .flat_map(|i| match self.radius.is_sign_positive() {
+                true => [i, i + 1, i + 2, i + 1, i + 3, i + 2],
+                false => [i, i + 2, i + 1, i + 1, i + 2, i + 3]
+            })
             .collect::<Vec<u32>>();
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
 
