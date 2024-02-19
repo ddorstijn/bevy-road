@@ -19,11 +19,9 @@ struct RoadEdge {
 struct RoadController;
 ```
 
-Every road consists of a bunch of a bunc of nodes connected by one or more connection. 
+There are building and simulation phases.
 
-1 connection gives a dead end.
-2 connections gives a joint of a road.
-3 or more connections gives a junction.
+Road graph consist of grouped nodes and edges. This means in the graph there is no difference between lanes, but the edge defines this internally. Instead lane switching is kept internally to the edge itself. Cars can steer towards the lane they are in using the closest point on the circle the arc makes. Cars are parented to the edge they are currently driving on.
 
-Connections do not necessarily end at an intersection. Instead the node creates a mesh connecting all the connections together.
-This allows for fine-grained control of the placement of roads and junctions.
+Maybe implement a lookup/register function to occupy a position on a lane and to see further ahead?
+ 

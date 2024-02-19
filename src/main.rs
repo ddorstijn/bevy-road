@@ -1,9 +1,12 @@
+use std::f32::consts::PI;
+
 use bevy::{
     pbr::wireframe::WireframePlugin, prelude::*,
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 use camera::{CameraPlugin, PanOrbitCamera};
+use debug::DebugPlugin;
 use road::{node::RoadSpawner, RoadPlugin};
 use states::GameStatePlugin;
 
@@ -11,6 +14,7 @@ pub mod camera;
 pub mod states;
 pub mod road;
 pub mod utility;
+mod debug;
 
 fn main() {
     App::new()
@@ -20,7 +24,7 @@ fn main() {
             WireframePlugin,
             WorldInspectorPlugin::default(),
         ))
-        .add_plugins((CameraPlugin, GameStatePlugin, RoadPlugin))
+        .add_plugins((CameraPlugin, DebugPlugin, GameStatePlugin, RoadPlugin))
         .register_type::<SelectedRoadNode>()
         .init_resource::<SelectedRoadNode>()
         .add_systems(Startup, setup_scene)
@@ -51,7 +55,7 @@ fn setup_scene(
             },
             transform: Transform {
                 translation: Vec3::new(0.0, 2.0, 0.0),
-                rotation: Quat::from_rotation_x(-std::f32::consts::PI / 4.),
+                rotation: Quat::from_rotation_x(-PI / 4.),
                 ..default()
             },
             ..default()
@@ -82,8 +86,8 @@ fn setup_scene(
                 ..default()
             })),
             transform: Transform {
-                translation: Vec3::new(1.0, 0.0, 1.0),
-                rotation: Quat::from_rotation_y(-std::f32::consts::PI / 4.),
+                translation: Vec3::new(0.0, 0.1, 0.0),
+                rotation: Quat::from_axis_angle(Vec3::Y, -PI / 2.0),
                 ..default()
             },
             ..default()

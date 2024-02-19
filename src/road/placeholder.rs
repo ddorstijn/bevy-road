@@ -40,9 +40,12 @@ fn handle_build_selection(
 
     commands.spawn((
         Name::new("RoadPlaceholder"),
-        PbrBundle::default(),
+        PbrBundle {
+            transform: start.compute_transform(),
+            ..default()
+        },
         RoadPlaceholder,
-        RoadEdge::new(start, hitpoint, None),
+        RoadEdge::new(start.transform_point(hitpoint)),
     ));
 }
 
@@ -54,12 +57,10 @@ fn move_road_placeholder(
     window_query: Query<&Window, With<PrimaryWindow>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<PanOrbitCamera>>,
 
-    gizmos: Gizmos,
-
-    mut query: Query<(&mut Handle<Mesh>, &mut RoadEdge), With<RoadPlaceholder>>,
+    mut query: Query<(&mut Handle<Mesh>, &GlobalTransform, &mut RoadEdge), With<RoadPlaceholder>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    let Ok((mut handle, mut edge)) = query.get_single_mut() else {
+    let Ok((mut handle, transform, mut edge)) = query.get_single_mut() else {
         return;
     };
 
@@ -71,8 +72,11 @@ fn move_road_placeholder(
         return;
     };
 
-    edge.recalculate(hitpoint, Some(gizmos));
-    *handle = meshes.add(edge.generate_mesh());
+    let point = transform.compute_matrix().inverse().transform_point(hitpoint);
+    *edge = RoadEdge::new(point);
+    if point.angle_between(Vec3::Z) > 0.001 {
+        *handle = meshes.add(edge.generate_mesh());
+    }
 }
 
 // fn finalize_road(
