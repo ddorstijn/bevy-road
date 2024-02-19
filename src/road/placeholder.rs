@@ -11,11 +11,11 @@ impl Plugin for PlaceholderPlugin {
         app.add_systems(
             Update,
             (
-                handle_build_selection
-                    .run_if(input_just_released(MouseButton::Left))
+                (start_building.run_if(input_just_released(MouseButton::Left)))
                     .in_set(BuildSystemSet::NotBuilding),
                 (
-                    move_road_placeholder,
+                    adjust_lanes,
+                    move_road_placeholder.after(adjust_lanes),
                     finalize_road.run_if(input_just_released(MouseButton::Left)),
                 )
                     .in_set(BuildSystemSet::Building),
@@ -38,7 +38,7 @@ enum BuildSystemSet {
     NotBuilding,
 }
 
-fn handle_build_selection(
+fn start_building(
     rapier_context: Res<RapierContext>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<PanOrbitCamera>>,
@@ -64,7 +64,7 @@ fn handle_build_selection(
             ..default()
         },
         RoadPlaceholder,
-        RoadEdge::new(start.transform_point(hitpoint)),
+        RoadEdge::new(start.transform_point(hitpoint), 1),
     ));
 }
 
@@ -95,9 +95,48 @@ fn move_road_placeholder(
         .compute_matrix()
         .inverse()
         .transform_point(hitpoint);
-    *edge = RoadEdge::new(point);
-    if point.angle_between(Vec3::Z) > 0.001 {
+    *edge = RoadEdge::new(point, edge.lanes);
+    if edge.length != 0.0 {
         *handle = meshes.add(edge.generate_mesh());
+    }
+}
+
+fn adjust_lanes(mut query: Query<&mut RoadEdge, With<RoadPlaceholder>>, keys: Res<Input<KeyCode>>,) {
+    let mut edge = query.single_mut();
+    if keys.just_pressed(KeyCode::Key1) {
+        edge.lanes = 1
+    }
+    
+    if keys.just_pressed(KeyCode::Key2) {
+        edge.lanes = 2
+    }
+    
+    if keys.just_pressed(KeyCode::Key3) {
+        edge.lanes = 3
+    }
+    
+    if keys.just_pressed(KeyCode::Key4) {
+        edge.lanes = 4
+    }
+    
+    if keys.just_pressed(KeyCode::Key5) {
+        edge.lanes = 5
+    }
+    
+    if keys.just_pressed(KeyCode::Key6) {
+        edge.lanes = 6
+    }
+    
+    if keys.just_pressed(KeyCode::Key7) {
+        edge.lanes = 7
+    }
+    
+    if keys.just_pressed(KeyCode::Key8) {
+        edge.lanes = 8
+    }
+    
+    if keys.just_pressed(KeyCode::Key9) {
+        edge.lanes = 9
     }
 }
 
@@ -112,26 +151,30 @@ fn finalize_road(
         return;
     };
 
-    let end = edge.get_end_transform();
-
-    let id = commands
-        .spawn((
-            PbrBundle {
-                material: materials.add(Color::rgb(1.0, 1.0, 0.0).into()),
-                mesh: meshes.add(Mesh::from(shape::Cube {
-                    size: 0.5,
-                    ..default()
-                })),
-                transform: end,
-                ..default()
-            },
-            Collider::cuboid(0.5, 0.5, 0.5),
-            CollisionGroups::new(Group::GROUP_2, Group::GROUP_1),
-            Name::new("Road Endpoint"),
-            RoadSpawner,
-        ))
-        .id();
-
-    commands.entity(entity).add_child(id);
     commands.entity(entity).remove::<RoadPlaceholder>();
+
+    for lane in 0..edge.lanes {
+        let end = edge.get_end_transform(Some(lane));
+    
+        const NODE_END_HALF_WIDTH: f32 = 0.20;
+        let id = commands
+            .spawn((
+                PbrBundle {
+                    material: materials.add(Color::rgb(1.0, 1.0, 0.0).into()),
+                    mesh: meshes.add(Mesh::from(shape::Cube {
+                        size: NODE_END_HALF_WIDTH,
+                        ..default()
+                    })),
+                    transform: end,
+                    ..default()
+                },
+                Collider::cuboid(NODE_END_HALF_WIDTH, NODE_END_HALF_WIDTH, NODE_END_HALF_WIDTH),
+                CollisionGroups::new(Group::GROUP_2, Group::GROUP_1),
+                Name::new(format!("Road Endpoint lane {}", lane)),
+                RoadSpawner,
+            ))
+            .id();
+    
+        commands.entity(entity).add_child(id);
+    }
 }

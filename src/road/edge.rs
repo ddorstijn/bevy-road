@@ -1,19 +1,21 @@
-use std::f32::consts::PI;
+use std::f32::consts::TAU;
 
 use bevy::prelude::*;
 use bevy::render::render_resource::PrimitiveTopology;
 
 const PRECISION: f32 = 0.001;
+const ROAD_WIDTH: f32 = 0.5;
 
 #[derive(Component, Debug, Default, Reflect)]
 #[reflect(Component, Default)]
 pub struct RoadEdge {
     pub radius: f32,
     pub length: f32,
+    pub lanes: u8,
 }
 
 impl RoadEdge {
-    pub fn new(endpoint: Vec3) -> Self {
+    pub fn new(endpoint: Vec3, lanes: u8) -> Self {
         let endpoint2d = endpoint.xz();
         let midpoint = endpoint2d / 2.0;
         let bisector = midpoint.perp();
@@ -26,6 +28,7 @@ impl RoadEdge {
                     true => endpoint.length(),
                     false => 0.0,
                 },
+                lanes
             };
         }
 
@@ -48,13 +51,13 @@ impl RoadEdge {
 
         // atan returns angle between [-PI, PI], transform it to [0, 2PI]
         let angle = match angle.is_sign_positive() {
-            true => 2.0 * PI - angle,
+            true => TAU - angle,
             false => angle.abs(),
         };
 
         let length = (angle * radius).abs();
 
-        Self { radius, length }
+        Self { radius, length, lanes }
     }
 
     fn interpolate_arc(&self, length: f32, offset: f32) -> Transform {
@@ -89,8 +92,13 @@ impl RoadEdge {
         }
     }
 
-    pub fn get_end_transform(&self) -> Transform {
-        self.interpolate(self.length, 0.0)
+    pub fn get_end_transform(&self, lane: Option<u8>) -> Transform {
+        if lane.is_none() {
+            return self.interpolate(self.length, 0.0);
+        }
+
+        let start_point = -0.5 * ROAD_WIDTH * (self.lanes as f32 - 1.0); 
+        self.interpolate(self.length, start_point + lane.unwrap() as f32 * ROAD_WIDTH)
     }
 
     pub fn generate_mesh(&self) -> Mesh {
@@ -99,9 +107,9 @@ impl RoadEdge {
         let points = (0..=n)
             .flat_map(|i| {
                 [
-                    self.interpolate(i as f32 / RESOLUTION as f32, -0.25)
+                    self.interpolate(i as f32 / RESOLUTION as f32, -ROAD_WIDTH * self.lanes as f32 / 2.)
                         .translation,
-                    self.interpolate(i as f32 / RESOLUTION as f32, 0.25)
+                    self.interpolate(i as f32 / RESOLUTION as f32, ROAD_WIDTH * self.lanes as f32 / 2.)
                         .translation,
                 ]
             })
