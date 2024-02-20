@@ -1,9 +1,6 @@
 use std::f32::consts::PI;
 
-use bevy::{
-    pbr::wireframe::WireframePlugin, prelude::*,
-};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use camera::{CameraPlugin, PanOrbitCamera};
 use debug::DebugPlugin;
@@ -11,19 +8,14 @@ use road::{node::RoadSpawner, RoadPlugin};
 use states::GameStatePlugin;
 
 pub mod camera;
-pub mod states;
-pub mod road;
-pub mod utility;
 mod debug;
+pub mod road;
+pub mod states;
+pub mod utility;
 
 fn main() {
     App::new()
-        .add_plugins((
-            DefaultPlugins,
-            RapierPhysicsPlugin::<NoUserData>::default(),
-            WireframePlugin,
-            WorldInspectorPlugin::default(),
-        ))
+        .add_plugins((DefaultPlugins, RapierPhysicsPlugin::<NoUserData>::default()))
         .add_plugins((CameraPlugin, DebugPlugin, GameStatePlugin, RoadPlugin))
         .register_type::<SelectedRoadNode>()
         .init_resource::<SelectedRoadNode>()
@@ -65,11 +57,8 @@ fn setup_scene(
 
     commands.spawn((
         PbrBundle {
-            material: materials.add(Color::rgb(0.0, 0.4, 0.4).into()),
-            mesh: meshes.add(Mesh::from(shape::Plane {
-                size: 20.,
-                ..default()
-            })),
+            material: materials.add(Color::rgb(0.0, 0.4, 0.4)),
+            mesh: meshes.add(Plane3d::new(Vec3::Y)),
             transform: Transform::from_xyz(0.0, -0.1, 0.0),
             ..default()
         },
@@ -80,11 +69,10 @@ fn setup_scene(
 
     commands.spawn((
         PbrBundle {
-            material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-            mesh: meshes.add(Mesh::from(shape::Cube {
-                size: 0.5,
-                ..default()
-            })),
+            material: materials.add(Color::rgb(1.0, 0.0, 0.0)),
+            mesh: meshes.add(Cuboid {
+                half_size: Vec3::splat(0.5),
+            }),
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 0.0),
                 // rotation: Quat::from_axis_angle(Vec3::Y, -PI / 2.0),

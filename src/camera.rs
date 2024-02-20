@@ -1,5 +1,8 @@
-use bevy::{input::mouse::{MouseMotion, MouseWheel}, window::PrimaryWindow};
 use bevy::prelude::*;
+use bevy::{
+    input::mouse::{MouseMotion, MouseWheel},
+    window::PrimaryWindow,
+};
 
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
@@ -32,7 +35,7 @@ fn pan_orbit_camera(
     windows: Query<&Window, With<PrimaryWindow>>,
     mut ev_motion: EventReader<MouseMotion>,
     mut ev_scroll: EventReader<MouseWheel>,
-    input_mouse: Res<Input<MouseButton>>,
+    input_mouse: Res<ButtonInput<MouseButton>>,
     mut query: Query<(&mut PanOrbitCamera, &mut Transform, &Projection)>,
 ) {
     // change input mapping for orbit and panning here

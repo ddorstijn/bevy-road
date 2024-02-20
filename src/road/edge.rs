@@ -1,6 +1,8 @@
 use std::f32::consts::TAU;
 
 use bevy::prelude::*;
+use bevy::render::mesh::Indices;
+use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::render_resource::PrimitiveTopology;
 
 const PRECISION: f32 = 0.001;
@@ -29,7 +31,7 @@ impl RoadEdge {
                     true => endpoint.length(),
                     false => 0.0,
                 },
-                lanes
+                lanes,
             };
         }
 
@@ -58,7 +60,11 @@ impl RoadEdge {
 
         let length = (angle * radius).abs();
 
-        Self { radius, length, lanes }
+        Self {
+            radius,
+            length,
+            lanes,
+        }
     }
 
     fn interpolate_arc(&self, length: f32, offset: f32) -> Transform {
@@ -98,36 +104,57 @@ impl RoadEdge {
             return self.interpolate(self.length, 0.0);
         }
 
-        let start_point = -0.5 * ROAD_WIDTH * (self.lanes as f32 - 1.0); 
+        let start_point = -0.5 * ROAD_WIDTH * (self.lanes as f32 - 1.0);
         self.interpolate(self.length, start_point + lane.unwrap() as f32 * ROAD_WIDTH)
     }
+}
 
-    pub fn generate_mesh(&self) -> Mesh {
+impl Meshable for RoadEdge {
+    type Output = Mesh;
+
+    fn mesh(&self) -> Self::Output {
         let n = self.length.ceil() as usize * RESOLUTION;
-        let points = (0..=n)
+        let positions = (0..=n)
             .flat_map(|i| {
                 [
-                    self.interpolate(i as f32 / RESOLUTION as f32, -ROAD_WIDTH * self.lanes as f32 / 2.)
-                        .translation,
-                    self.interpolate(i as f32 / RESOLUTION as f32, ROAD_WIDTH * self.lanes as f32 / 2.)
-                        .translation,
+                    self.interpolate(
+                        i as f32 / RESOLUTION as f32,
+                        -ROAD_WIDTH * self.lanes as f32 / 2.,
+                    )
+                    .translation,
+                    self.interpolate(
+                        i as f32 / RESOLUTION as f32,
+                        ROAD_WIDTH * self.lanes as f32 / 2.,
+                    )
+                    .translation,
                 ]
             })
             .collect::<Vec<Vec3>>();
 
-        let normals = vec![Vec3::Y; points.len()];
-        let indices = (0..n as u32 * 2 - 1).step_by(2)
-            .flat_map(|i| match self.radius.is_sign_positive() {
-                true => [i, i + 1, i + 2, i + 1, i + 3, i + 2],
-                false => [i, i + 2, i + 1, i + 1, i + 2, i + 3]
-            })
-            .collect::<Vec<u32>>();
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        let normals = vec![Vec3::Y; positions.len()];
+        let indices = Indices::U32(
+            (0..n as u32 * 2 - 1)
+                .step_by(2)
+                .flat_map(|i| match self.radius.is_sign_positive() {
+                    true => [i, i + 1, i + 2, i + 1, i + 3, i + 2],
+                    false => [i, i + 2, i + 1, i + 1, i + 2, i + 3],
+                })
+                .collect::<Vec<u32>>(),
+        );
 
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, points);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
-        mesh.set_indices(Some(bevy::render::mesh::Indices::U32(indices)));
+        Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        )
+        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
+        // .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
+        .with_inserted_indices(indices)
+    }
+}
 
-        mesh
+impl From<RoadEdge> for Mesh {
+    fn from(edge: RoadEdge) -> Self {
+        edge.mesh()
     }
 }

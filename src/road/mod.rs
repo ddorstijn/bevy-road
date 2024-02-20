@@ -3,10 +3,9 @@ use petgraph::graph::Graph;
 
 use self::edge::RoadEdge;
 
-pub mod placeholder;
-pub mod node;
 pub mod edge;
-
+pub mod node;
+pub mod placeholder;
 
 #[derive(Resource, Default, Deref, DerefMut)]
 pub struct RoadGraph(Graph<Entity, Entity>);
@@ -14,8 +13,7 @@ pub struct RoadGraph(Graph<Entity, Entity>);
 pub struct RoadPlugin;
 impl Plugin for RoadPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<RoadGraph>()
+        app.init_resource::<RoadGraph>()
             .register_type::<RoadEdge>()
             .add_plugins(placeholder::PlaceholderPlugin);
     }

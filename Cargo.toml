@@ -6,7 +6,7 @@ edition = "2021"
 [profile.dev]
 debug = 0
 strip = "debuginfo"
-opt-level = 0 # Switch to 1 for more runtime performance
+opt-level = 0       # Switch to 1 for more runtime performance
 
 [profile.dev.package."*"]
 opt-level = 3
@@ -24,7 +24,7 @@ lto = "thin"
 codegen-units = 1
 
 [dependencies]
-bevy = { version = "0.12.1", features = ["dynamic_linking"] }
+bevy = { version = "0.13", features = ["dynamic_linking"] }
 bevy-inspector-egui = "0.22.1"
 petgraph = "0.6.4"
-bevy_rapier3d = { version = "0.24.0", features = ["simd-stable"] }
+bevy_rapier3d = { version = "0.25.0", features = ["simd-stable"] }

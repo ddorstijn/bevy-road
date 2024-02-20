@@ -24,7 +24,7 @@ impl Plugin for PlaceholderPlugin {
         .add_systems(
             OnExit(GameState::Building),
             (
-                remove_placeholder.run_if(any_with_component::<RoadPlaceholder>()),
+                remove_placeholder.run_if(any_with_component::<RoadPlaceholder>),
                 hide_nodes,
             )
                 .in_set(BuildSystemSet::ExitBuildMode),
@@ -33,8 +33,8 @@ impl Plugin for PlaceholderPlugin {
         .configure_sets(
             Update,
             (
-                BuildSystemSet::NotBuilding.run_if(not(any_with_component::<RoadPlaceholder>())),
-                BuildSystemSet::Building.run_if(any_with_component::<RoadPlaceholder>()),
+                BuildSystemSet::NotBuilding.run_if(not(any_with_component::<RoadPlaceholder>)),
+                BuildSystemSet::Building.run_if(any_with_component::<RoadPlaceholder>),
             )
                 .run_if(in_state(GameState::Building)),
         )
@@ -110,45 +110,48 @@ fn move_road_placeholder(
         .transform_point(hitpoint);
     *edge = RoadEdge::new(point, edge.lanes);
     if edge.length != 0.0 {
-        *handle = meshes.add(edge.generate_mesh());
+        *handle = meshes.add(edge.mesh());
     }
 }
 
-fn adjust_lanes(mut query: Query<&mut RoadEdge, With<RoadPlaceholder>>, keys: Res<Input<KeyCode>>) {
+fn adjust_lanes(
+    mut query: Query<&mut RoadEdge, With<RoadPlaceholder>>,
+    keys: Res<ButtonInput<KeyCode>>,
+) {
     let mut edge = query.single_mut();
-    if keys.just_pressed(KeyCode::Key1) {
+    if keys.just_pressed(KeyCode::Digit1) {
         edge.lanes = 1
     }
 
-    if keys.just_pressed(KeyCode::Key2) {
+    if keys.just_pressed(KeyCode::Digit2) {
         edge.lanes = 2
     }
 
-    if keys.just_pressed(KeyCode::Key3) {
+    if keys.just_pressed(KeyCode::Digit3) {
         edge.lanes = 3
     }
 
-    if keys.just_pressed(KeyCode::Key4) {
+    if keys.just_pressed(KeyCode::Digit4) {
         edge.lanes = 4
     }
 
-    if keys.just_pressed(KeyCode::Key5) {
+    if keys.just_pressed(KeyCode::Digit5) {
         edge.lanes = 5
     }
 
-    if keys.just_pressed(KeyCode::Key6) {
+    if keys.just_pressed(KeyCode::Digit6) {
         edge.lanes = 6
     }
 
-    if keys.just_pressed(KeyCode::Key7) {
+    if keys.just_pressed(KeyCode::Digit7) {
         edge.lanes = 7
     }
 
-    if keys.just_pressed(KeyCode::Key8) {
+    if keys.just_pressed(KeyCode::Digit8) {
         edge.lanes = 8
     }
 
-    if keys.just_pressed(KeyCode::Key9) {
+    if keys.just_pressed(KeyCode::Digit9) {
         edge.lanes = 9
     }
 }
@@ -173,11 +176,10 @@ fn finalize_road(
         let id = commands
             .spawn((
                 PbrBundle {
-                    material: materials.add(Color::rgb(1.0, 1.0, 0.0).into()),
-                    mesh: meshes.add(Mesh::from(shape::Cube {
-                        size: NODE_END_HALF_WIDTH,
-                        ..default()
-                    })),
+                    material: materials.add(Color::rgb(1.0, 1.0, 0.0)),
+                    mesh: meshes.add(Cuboid {
+                        half_size: Vec3::splat(NODE_END_HALF_WIDTH),
+                    }),
                     transform: end,
                     ..default()
                 },

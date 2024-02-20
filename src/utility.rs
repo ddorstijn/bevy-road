@@ -19,7 +19,7 @@ pub fn cast_ray_from_cursor(
     };
 
     let Some((entity, toi)) =
-        rapier_context.cast_ray(ray.origin, ray.direction, 1000.0, true, filter)
+        rapier_context.cast_ray(ray.origin, ray.direction.into(), 1000.0, true, filter)
     else {
         return None;
     };

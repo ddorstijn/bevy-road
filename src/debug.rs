@@ -8,16 +8,22 @@ use crate::road::placeholder::RoadPlaceholder;
 pub struct DebugPlugin;
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Update, debug_edges);
+        app.add_systems(Update, debug_edges);
     }
 }
 
-fn debug_edges(edge_query: Query<(&GlobalTransform, &RoadEdge), With<RoadPlaceholder>>, mut gizmos: Gizmos) {
+fn debug_edges(
+    edge_query: Query<(&GlobalTransform, &RoadEdge), With<RoadPlaceholder>>,
+    mut gizmos: Gizmos,
+) {
     for (transform, edge) in edge_query.iter() {
         // println!("basis: {}, left: {}, forward: {}", transform.translation(), transform.left(), transform.forward());
         // gizmos.line(transform.translation(), transform.translation() + transform.right(), Color::WHITE);
-        gizmos.line(transform.translation(), transform.translation() + transform.forward(), Color::BLACK);
+        gizmos.line(
+            transform.translation(),
+            transform.translation() + transform.forward(),
+            Color::BLACK,
+        );
 
         let center = transform.translation() + transform.right() * edge.radius;
 
@@ -25,7 +31,7 @@ fn debug_edges(edge_query: Query<(&GlobalTransform, &RoadEdge), With<RoadPlaceho
         let mut point = transform.translation() - center;
 
         gizmos.sphere(center, Quat::IDENTITY, 0.1, Color::BLUE);
-        
+
         point = rot.mul_vec3(point);
 
         gizmos.ray(center, point, Color::GREEN);
@@ -47,13 +53,13 @@ fn debug_edges(edge_query: Query<(&GlobalTransform, &RoadEdge), With<RoadPlaceho
 
         point = rot.mul_vec3(point);
         gizmos.ray(center, point, Color::BLUE);
-        
+
         // Flipped
         let center = -center;
         let mut point = (transform.translation() - center) * -1.0;
 
         gizmos.sphere(center, Quat::IDENTITY, 0.1, Color::GRAY);
-        
+
         point = rot.mul_vec3(point);
 
         gizmos.ray(center, point, Color::GREEN.with_a(0.25));
@@ -75,6 +81,5 @@ fn debug_edges(edge_query: Query<(&GlobalTransform, &RoadEdge), With<RoadPlaceho
 
         point = rot.mul_vec3(point);
         gizmos.ray(center, point, Color::BLUE.with_a(0.25));
-
     }
 }
