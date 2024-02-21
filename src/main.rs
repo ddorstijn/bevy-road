@@ -1,7 +1,6 @@
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
-use bevy_rapier3d::prelude::*;
 use camera::{CameraPlugin, PanOrbitCamera};
 use debug::DebugPlugin;
 use road::{node::RoadSpawner, RoadPlugin};
@@ -9,13 +8,13 @@ use states::GameStatePlugin;
 
 pub mod camera;
 mod debug;
+pub mod raycast;
 pub mod road;
 pub mod states;
-pub mod utility;
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, RapierPhysicsPlugin::<NoUserData>::default()))
+        .add_plugins(DefaultPlugins)
         .add_plugins((CameraPlugin, DebugPlugin, GameStatePlugin, RoadPlugin))
         .register_type::<SelectedRoadNode>()
         .init_resource::<SelectedRoadNode>()
@@ -58,21 +57,19 @@ fn setup_scene(
     commands.spawn((
         PbrBundle {
             material: materials.add(Color::rgb(0.0, 0.4, 0.4)),
-            mesh: meshes.add(Plane3d::new(Vec3::Y)),
+            mesh: meshes.add(Plane3d::new(Vec3::Y).mesh().size(100.0, 100.0)),
             transform: Transform::from_xyz(0.0, -0.1, 0.0),
             ..default()
         },
-        Collider::cuboid(10.0, 0.1, 10.0),
-        CollisionGroups::new(Group::GROUP_1, Group::GROUP_1),
         Name::new("Ground"),
     ));
 
+    let cuboid = Cuboid::from_size(Vec3::ONE).mesh();
+    let aabb = cuboid.compute_aabb().unwrap();
     commands.spawn((
         PbrBundle {
             material: materials.add(Color::rgb(1.0, 0.0, 0.0)),
-            mesh: meshes.add(Cuboid {
-                half_size: Vec3::splat(0.5),
-            }),
+            mesh: meshes.add(cuboid),
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 0.0),
                 // rotation: Quat::from_axis_angle(Vec3::Y, -PI / 2.0),
@@ -80,8 +77,7 @@ fn setup_scene(
             },
             ..default()
         },
-        Collider::cuboid(0.5, 0.5, 0.5),
-        CollisionGroups::new(Group::GROUP_2, Group::GROUP_1),
+        aabb,
         Name::new("Road Spawner"),
         RoadSpawner,
     ));

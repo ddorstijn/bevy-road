@@ -13,8 +13,8 @@ impl Plugin for GameStatePlugin {
 
 #[derive(Debug, Clone, Default, Eq, PartialEq, Hash, States)]
 pub enum GameState {
-    #[default]
     Simulating,
+    #[default]
     Building,
 }
 

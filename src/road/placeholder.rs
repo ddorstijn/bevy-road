@@ -1,7 +1,9 @@
-use bevy::{input::common_conditions::input_just_released, prelude::*, window::PrimaryWindow};
-use bevy_rapier3d::prelude::*;
+use bevy::{input::common_conditions::input_just_released, prelude::*};
 
-use crate::{camera::PanOrbitCamera, states::GameState, utility::cast_ray_from_cursor};
+use crate::{
+    raycast::{Raycast, RaycastGroup},
+    states::GameState,
+};
 
 use super::{edge::RoadEdge, node::RoadSpawner};
 
@@ -11,7 +13,10 @@ impl Plugin for PlaceholderPlugin {
         app.add_systems(
             Update,
             (
-                (start_building.run_if(input_just_released(MouseButton::Left)))
+                (
+                    start_building.run_if(input_just_released(MouseButton::Left)),
+                    hover_road,
+                )
                     .in_set(BuildSystemSet::NotBuilding),
                 (
                     adjust_lanes,
@@ -51,19 +56,8 @@ enum BuildSystemSet {
     NotBuilding,
 }
 
-fn start_building(
-    rapier_context: Res<RapierContext>,
-    window_query: Query<&Window, With<PrimaryWindow>>,
-    camera_query: Query<(&Camera, &GlobalTransform), With<PanOrbitCamera>>,
-
-    node_query: Query<&GlobalTransform>,
-    mut commands: Commands,
-) {
-    let filter = QueryFilter::default();
-
-    let Some((entity, hitpoint)) =
-        cast_ray_from_cursor(rapier_context, window_query, camera_query, filter)
-    else {
+fn start_building(raycast: Raycast, node_query: Query<&GlobalTransform>, mut commands: Commands) {
+    let Some((entity, hitpoint)) = raycast.cursor_ray(None) else {
         return;
     };
     let Ok(start) = node_query.get(entity) else {
@@ -78,6 +72,7 @@ fn start_building(
         },
         RoadPlaceholder,
         RoadEdge::new(start.transform_point(hitpoint), 1),
+        RaycastGroup { group: 0b1 },
     ));
 }
 
@@ -85,32 +80,29 @@ fn start_building(
 pub struct RoadPlaceholder;
 
 fn move_road_placeholder(
-    rapier_context: Res<RapierContext>,
-    window_query: Query<&Window, With<PrimaryWindow>>,
-    camera_query: Query<(&Camera, &GlobalTransform), With<PanOrbitCamera>>,
-
+    raycast: Raycast,
     mut query: Query<(&mut Handle<Mesh>, &GlobalTransform, &mut RoadEdge), With<RoadPlaceholder>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    let Ok((mut handle, transform, mut edge)) = query.get_single_mut() else {
+    let Some((_, hitpoint)) = raycast.cursor_ray(None) else {
         return;
     };
 
-    let filter =
-        QueryFilter::default().groups(CollisionGroups::new(Group::GROUP_1, Group::GROUP_1));
-    let Some((_, hitpoint)) =
-        cast_ray_from_cursor(rapier_context, window_query, camera_query, filter)
-    else {
-        return;
-    };
+    let count = query.iter().count();
 
-    let point = transform
-        .compute_matrix()
-        .inverse()
-        .transform_point(hitpoint);
-    *edge = RoadEdge::new(point, edge.lanes);
-    if edge.length != 0.0 {
-        *handle = meshes.add(edge.mesh());
+    if count == 1 {
+        let Ok((mut handle, transform, mut edge)) = query.get_single_mut() else {
+            return;
+        };
+
+        let point = transform
+            .compute_matrix()
+            .inverse()
+            .transform_point(hitpoint);
+        *edge = RoadEdge::new(point, edge.lanes);
+        if edge.length != 0.0 {
+            *handle = meshes.add(edge.mesh());
+        }
     }
 }
 
@@ -168,6 +160,9 @@ fn finalize_road(
     };
 
     commands.entity(entity).remove::<RoadPlaceholder>();
+    commands
+        .entity(entity)
+        .insert(edge.mesh().compute_aabb().unwrap());
 
     for lane in 0..edge.lanes {
         let end = edge.get_end_transform(Some(lane));
@@ -183,12 +178,6 @@ fn finalize_road(
                     transform: end,
                     ..default()
                 },
-                Collider::cuboid(
-                    NODE_END_HALF_WIDTH,
-                    NODE_END_HALF_WIDTH,
-                    NODE_END_HALF_WIDTH,
-                ),
-                CollisionGroups::new(Group::GROUP_2, Group::GROUP_1),
                 Name::new(format!("Road Endpoint lane {}", lane)),
                 RoadSpawner,
             ))
@@ -214,4 +203,27 @@ fn show_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
     for mut visibility in query.iter_mut() {
         *visibility = Visibility::Visible;
     }
+}
+
+fn hover_road(
+    mut gizmos: Gizmos,
+    raycast: Raycast,
+    query: Query<(&GlobalTransform, &RoadEdge), Without<RoadPlaceholder>>,
+) {
+    let Some((entity, hitpoint)) = raycast.cursor_ray(Some(0b1)) else {
+        return;
+    };
+
+    gizmos.sphere(hitpoint, Quat::IDENTITY, 1.0, Color::GREEN);
+
+    let Ok((transform, edge)) = query.get(entity) else {
+        return;
+    };
+
+    gizmos.sphere(
+        transform.translation() + transform.right() * edge.lanes as f32,
+        Quat::IDENTITY,
+        0.5,
+        Color::ORANGE,
+    );
 }
