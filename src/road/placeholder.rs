@@ -214,11 +214,20 @@ fn hover_road(
         return;
     };
 
-    gizmos.sphere(hitpoint, Quat::IDENTITY, 1.0, Color::GREEN);
-
     let Ok((transform, edge)) = query.get(entity) else {
         return;
     };
+
+    if !edge.check_hit(
+        transform
+            .compute_matrix()
+            .inverse()
+            .transform_point(hitpoint),
+    ) {
+        return;
+    }
+
+    gizmos.sphere(hitpoint, Quat::IDENTITY, 1.0, Color::GREEN);
 
     gizmos.sphere(
         transform.translation() + transform.right() * edge.lanes as f32,

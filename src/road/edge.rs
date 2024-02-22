@@ -107,6 +107,20 @@ impl RoadEdge {
         let start_point = -0.5 * ROAD_WIDTH * (self.lanes as f32 - 1.0);
         self.interpolate(self.length, start_point + lane.unwrap() as f32 * ROAD_WIDTH)
     }
+
+    pub fn check_hit(&self, hitpoint: Vec3) -> bool {
+        let length = Vec3::new(hitpoint.x - self.radius, 0.0, hitpoint.z).length();
+
+        if length < self.radius - self.lanes as f32 * ROAD_WIDTH / 2.0 {
+            return false;
+        }
+
+        if length > self.radius + self.lanes as f32 * ROAD_WIDTH / 2.0 {
+            return false;
+        }
+
+        true
+    }
 }
 
 impl Meshable for RoadEdge {
