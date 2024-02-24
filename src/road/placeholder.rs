@@ -1,9 +1,6 @@
 use bevy::{input::common_conditions::input_just_released, prelude::*};
 
-use crate::{
-    raycast::{Raycast, RaycastGroup},
-    states::GameState,
-};
+use crate::{raycast::Raycast, states::GameState};
 
 use super::{edge::RoadEdge, node::RoadSpawner};
 
@@ -56,8 +53,12 @@ enum BuildSystemSet {
     NotBuilding,
 }
 
-fn start_building(raycast: Raycast, node_query: Query<&GlobalTransform>, mut commands: Commands) {
-    let Some((entity, hitpoint)) = raycast.cursor_ray(None) else {
+fn start_building(
+    raycast: Raycast<RoadSpawner>,
+    node_query: Query<&GlobalTransform>,
+    mut commands: Commands,
+) {
+    let Some((entity, hitpoint)) = raycast.cursor_ray() else {
         return;
     };
     let Ok(start) = node_query.get(entity) else {
@@ -72,7 +73,6 @@ fn start_building(raycast: Raycast, node_query: Query<&GlobalTransform>, mut com
         },
         RoadPlaceholder,
         RoadEdge::new(start.transform_point(hitpoint), 1),
-        RaycastGroup { group: 0b1 },
     ));
 }
 
@@ -80,11 +80,11 @@ fn start_building(raycast: Raycast, node_query: Query<&GlobalTransform>, mut com
 pub struct RoadPlaceholder;
 
 fn move_road_placeholder(
-    raycast: Raycast,
+    raycast: Raycast<Transform>,
     mut query: Query<(&mut Handle<Mesh>, &GlobalTransform, &mut RoadEdge), With<RoadPlaceholder>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    let Some((_, hitpoint)) = raycast.cursor_ray(None) else {
+    let Some((_, hitpoint)) = raycast.cursor_ray() else {
         return;
     };
 
@@ -168,13 +168,18 @@ fn finalize_road(
         let end = edge.get_end_transform(Some(lane));
 
         const NODE_END_HALF_WIDTH: f32 = 0.20;
+        let cuboid = Cuboid {
+            half_size: Vec3::splat(NODE_END_HALF_WIDTH),
+        };
+
+        println!("{:?}", cuboid.mesh().compute_aabb());
+
         let id = commands
             .spawn((
+                cuboid.mesh().compute_aabb().unwrap(),
                 PbrBundle {
                     material: materials.add(Color::rgb(1.0, 1.0, 0.0)),
-                    mesh: meshes.add(Cuboid {
-                        half_size: Vec3::splat(NODE_END_HALF_WIDTH),
-                    }),
+                    mesh: meshes.add(cuboid),
                     transform: end,
                     ..default()
                 },
@@ -207,32 +212,30 @@ fn show_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
 
 fn hover_road(
     mut gizmos: Gizmos,
-    raycast: Raycast,
+    raycast: Raycast<RoadEdge>,
     query: Query<(&GlobalTransform, &RoadEdge), Without<RoadPlaceholder>>,
 ) {
-    let Some((entity, hitpoint)) = raycast.cursor_ray(Some(0b1)) else {
-        return;
-    };
+    for (entity, hitpoint) in raycast.cursor_ray_intersections().into_iter() {
+        let Ok((transform, edge)) = query.get(entity) else {
+            return;
+        };
 
-    let Ok((transform, edge)) = query.get(entity) else {
-        return;
-    };
+        if !edge.check_hit(
+            transform
+                .compute_matrix()
+                .inverse()
+                .transform_point(hitpoint),
+        ) {
+            continue;
+        }
 
-    if !edge.check_hit(
-        transform
-            .compute_matrix()
-            .inverse()
-            .transform_point(hitpoint),
-    ) {
-        return;
+        gizmos.sphere(hitpoint, Quat::IDENTITY, 1.0, Color::GREEN);
+
+        gizmos.sphere(
+            transform.translation() + transform.right() * edge.lanes as f32,
+            Quat::IDENTITY,
+            0.5,
+            Color::ORANGE,
+        );
     }
-
-    gizmos.sphere(hitpoint, Quat::IDENTITY, 1.0, Color::GREEN);
-
-    gizmos.sphere(
-        transform.translation() + transform.right() * edge.lanes as f32,
-        Quat::IDENTITY,
-        0.5,
-        Color::ORANGE,
-    );
 }

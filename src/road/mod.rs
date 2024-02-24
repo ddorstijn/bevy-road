@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 use petgraph::graph::Graph;
 
-use crate::raycast::RaycastGroup;
-
 use self::edge::RoadEdge;
 
 pub mod biarc;
@@ -38,24 +36,31 @@ fn test_biarc(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
     let (edge1, midpoint, edge2) = biarc::compute_biarc(start, end, 1);
 
     commands.spawn((
-        Name::new("RoadPlaceholder"),
+        Name::new("RoadPlaceholder 1"),
         PbrBundle {
             transform: start.compute_transform(),
             mesh: meshes.add(edge1.mesh()),
             ..default()
         },
+        edge1.mesh().compute_aabb().unwrap(),
         edge1,
-        RaycastGroup { group: 0b1 },
     ));
 
+    let aabb2 = edge2.mesh().compute_aabb().unwrap();
+    println!(
+        "aabb: {:?}, center: {}",
+        aabb2,
+        midpoint.translation + midpoint.right() * edge2.radius
+    );
+
     commands.spawn((
-        Name::new("RoadPlaceholder"),
+        Name::new("RoadPlaceholder 2"),
         PbrBundle {
             transform: midpoint,
             mesh: meshes.add(edge2.mesh()),
             ..default()
         },
+        aabb2,
         edge2,
-        RaycastGroup { group: 0b1 },
     ));
 }

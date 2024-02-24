@@ -8,13 +8,8 @@ use bevy::{
 
 use crate::camera::PanOrbitCamera;
 
-#[derive(Component)]
-pub struct RaycastGroup {
-    pub group: u16,
-}
-
 #[derive(SystemParam)]
-pub struct Raycast<'w, 's> {
+pub struct Raycast<'w, 's, T: bevy::prelude::Component> {
     primary_window: Query<'w, 's, Read<Window>, With<PrimaryWindow>>,
     main_camera: Query<'w, 's, (Read<Camera>, Read<GlobalTransform>), With<PanOrbitCamera>>,
     objects: Query<
@@ -23,42 +18,34 @@ pub struct Raycast<'w, 's> {
         (
             Entity,
             Read<Aabb>,
-            Option<Read<RaycastGroup>>,
+            Read<GlobalTransform>,
             Read<ViewVisibility>,
         ),
+        With<T>,
     >,
 }
 
-impl<'w, 's> Raycast<'w, 's> {
-    pub fn cursor_ray(&self, filter: Option<u16>) -> Option<(Entity, Vec3)> {
+impl<'w, 's, T: bevy::prelude::Component> Raycast<'w, 's, T> {
+    pub fn cursor_ray_intersections(&self) -> Vec<(Entity, Vec3)> {
         let Some(cursor_position) = self.primary_window.single().cursor_position() else {
-            return None;
+            return Vec::new();
         };
 
         let (camera, camera_transform) = self.main_camera.single();
         let Some(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
-            return None;
+            return Vec::new();
         };
 
-        let cast = RayCast3d::from_ray(ray, 100.0);
-
         // Calculate if and where the ray is hitting the ground plane.
-        let Some((entity, distance)) = self
-            .objects
+        self.objects
             .iter()
-            .filter(|(_, _, group, _)| {
-                let Some(filter) = filter else {
-                    return true;
-                };
-
-                let Some(group) = group else {
-                    return false;
-                };
-
-                group.group == filter
-            })
             .filter(|(_, _, _, visibility)| visibility.get())
-            .map(|(entity, aabb, _group, _)| {
+            .map(|(entity, aabb, transform, _)| {
+                let world_to_model = transform.compute_matrix().inverse();
+                let origin = world_to_model.transform_point(ray.origin);
+                let dir = Direction3d::new(world_to_model.transform_vector3(ray.direction.into()))
+                    .unwrap();
+                let cast = RayCast3d::new(origin, dir, 100.0);
                 (
                     entity,
                     cast.aabb_intersection_at(&Aabb3d {
@@ -68,18 +55,22 @@ impl<'w, 's> Raycast<'w, 's> {
                 )
             })
             .filter(|(_, hit)| hit.is_some())
-            .map(|(entity, hit)| (entity, hit.unwrap()))
-            .reduce(|min, (entity, distance)| {
-                if min.1 > distance {
-                    return (entity, distance);
+            .map(|(entity, hit)| (entity, ray.get_point(hit.unwrap())))
+            .collect()
+    }
+
+    pub fn cursor_ray(&self) -> Option<(Entity, Vec3)> {
+        self.cursor_ray_intersections()
+            .into_iter()
+            .reduce(|min, (entity, hitpoint)| {
+                let current_distance = hitpoint.length_squared();
+                let minimum_distance = min.1.length_squared();
+
+                if minimum_distance > current_distance {
+                    return (entity, hitpoint);
                 }
 
                 min
             })
-        else {
-            return None;
-        };
-
-        Some((entity, ray.get_point(distance)))
     }
 }
