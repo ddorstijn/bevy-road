@@ -43,8 +43,9 @@ impl<'w, 's, T: bevy::prelude::Component> Raycast<'w, 's, T> {
             .map(|(entity, aabb, transform, _)| {
                 let world_to_model = transform.compute_matrix().inverse();
                 let origin = world_to_model.transform_point(ray.origin);
-                let dir = Direction3d::new(world_to_model.transform_vector3(ray.direction.into()))
-                    .unwrap();
+                let dir = Direction3d::new_unchecked(
+                    world_to_model.transform_vector3(ray.direction.into()),
+                );
                 let cast = RayCast3d::new(origin, dir, 100.0);
                 (
                     entity,

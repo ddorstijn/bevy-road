@@ -16,8 +16,6 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins((CameraPlugin, DebugPlugin, GameStatePlugin, RoadPlugin))
-        .register_type::<SelectedRoadNode>()
-        .init_resource::<SelectedRoadNode>()
         .add_systems(Startup, setup_scene)
         .run();
 }
@@ -54,13 +52,16 @@ fn setup_scene(
         Name::new("Sun"),
     ));
 
+    let plane = Plane3d::new(Vec3::Y).mesh().size(100.0, 100.0).build();
     commands.spawn((
+        plane.compute_aabb().unwrap(),
         PbrBundle {
             material: materials.add(Color::rgb(0.0, 0.4, 0.4)),
-            mesh: meshes.add(Plane3d::new(Vec3::Y).mesh().size(100.0, 100.0)),
+            mesh: meshes.add(plane),
             transform: Transform::from_xyz(0.0, -0.1, 0.0),
             ..default()
         },
+        GroundMarker,
         Name::new("Ground"),
     ));
 
@@ -83,6 +84,5 @@ fn setup_scene(
     ));
 }
 
-#[derive(Reflect, Resource, Default)]
-#[reflect(Resource)]
-struct SelectedRoadNode(Option<Entity>);
+#[derive(Component)]
+pub struct GroundMarker;

@@ -1,6 +1,6 @@
 use bevy::{input::common_conditions::input_just_released, prelude::*};
 
-use crate::{raycast::Raycast, states::GameState};
+use crate::{raycast::Raycast, states::GameState, GroundMarker};
 
 use super::{edge::RoadEdge, node::RoadSpawner};
 
@@ -80,7 +80,7 @@ fn start_building(
 pub struct RoadPlaceholder;
 
 fn move_road_placeholder(
-    raycast: Raycast<Transform>,
+    raycast: Raycast<GroundMarker>,
     mut query: Query<(&mut Handle<Mesh>, &GlobalTransform, &mut RoadEdge), With<RoadPlaceholder>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
@@ -153,9 +153,9 @@ fn finalize_road(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 
-    query: Query<(Entity, &RoadEdge), With<RoadPlaceholder>>,
+    query: Query<(Entity, &GlobalTransform, &RoadEdge), With<RoadPlaceholder>>,
 ) {
-    let Ok((entity, edge)) = query.get_single() else {
+    let Ok((entity, global_transform, edge)) = query.get_single() else {
         return;
     };
 
@@ -171,8 +171,6 @@ fn finalize_road(
         let cuboid = Cuboid {
             half_size: Vec3::splat(NODE_END_HALF_WIDTH),
         };
-
-        println!("{:?}", cuboid.mesh().compute_aabb());
 
         let id = commands
             .spawn((
@@ -190,6 +188,21 @@ fn finalize_road(
 
         commands.entity(entity).add_child(id);
     }
+
+    commands.spawn((
+        Name::new("RoadPlaceholder"),
+        PbrBundle {
+            transform: global_transform
+                .mul_transform(edge.get_end_transform(None))
+                .compute_transform(),
+            ..default()
+        },
+        RoadPlaceholder,
+        RoadEdge {
+            lanes: edge.lanes,
+            ..default()
+        },
+    ));
 }
 
 fn remove_placeholder(mut commands: Commands, query: Query<Entity, With<RoadPlaceholder>>) {
