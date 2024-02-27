@@ -111,10 +111,6 @@ impl RoadEdge {
     pub fn check_hit(&self, hitpoint: Vec3) -> bool {
         let length = Vec3::new(hitpoint.x - self.radius, 0.0, hitpoint.z).length();
         let road_thickness = self.lanes as f32 * ROAD_WIDTH / 2.0;
-        println!(
-            "length: {}, radius: {}, thickness: {}",
-            length, self.radius, road_thickness
-        );
 
         if length < self.radius.abs() - road_thickness {
             return false;

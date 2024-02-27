@@ -26,10 +26,14 @@ impl Plugin for RoadPlugin {
 pub struct BiarcGizmos {}
 
 fn test_biarc(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
-    let start = GlobalTransform::from(Transform::IDENTITY);
+    let start = GlobalTransform::from(Transform {
+        translation: Vec3::new(100.0, 0.0, 125.0),
+        rotation: Quat::from_axis_angle(Vec3::Y, 0.2171996894 * std::f32::consts::PI),
+        ..default()
+    });
     let end = GlobalTransform::from(Transform {
-        translation: Vec3::new(10.0, 0.0, -10.0),
-        rotation: Quat::from_axis_angle(Vec3::Y, std::f32::consts::PI),
+        translation: Vec3::new(140.0, 0.0, 250.0),
+        rotation: Quat::from_axis_angle(Vec3::Y, -0.5 * std::f32::consts::PI),
         ..default()
     });
 
