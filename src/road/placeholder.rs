@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::{raycast::Raycast, states::GameState, GroundMarker};
+use crate::{raycast::Raycast, road::biarc, states::GameState, GroundMarker};
 
 use super::{edge::RoadEdge, node::RoadSpawner};
 
@@ -82,9 +82,13 @@ fn move_road_placeholder(
     raycast_edges: Raycast<(With<RoadEdge>, Without<RoadPlaceholder>)>,
     raycast_ground: Raycast<With<GroundMarker>>,
     query_edges: Query<(&GlobalTransform, &RoadEdge), Without<RoadPlaceholder>>,
-    mut query: Query<(&mut Handle<Mesh>, &GlobalTransform, &mut RoadEdge), With<RoadPlaceholder>>,
+    mut query_placeholders: Query<
+        (Entity, &mut Handle<Mesh>, &GlobalTransform, &mut RoadEdge),
+        With<RoadPlaceholder>,
+    >,
     mut meshes: ResMut<Assets<Mesh>>,
     mut gizmos: Gizmos,
+    mut commands: Commands,
 ) {
     for (entity, hitpoint) in raycast_edges.cursor_ray_intersections().into_iter() {
         let Ok((transform, edge)) = query_edges.get(entity) else {
@@ -103,14 +107,40 @@ fn move_road_placeholder(
         gizmos.sphere(hitpoint, Quat::IDENTITY, 1.0, Color::GREEN);
 
         let length = edge.coordinates_to_length(local_hitpoint.xz());
-        let a = edge.interpolate_lane(length, edge.lanes);
+        let end = transform.mul_transform(edge.interpolate_lane(length, edge.lanes));
 
-        gizmos.sphere(
-            transform.transform_point(a.translation),
-            Quat::IDENTITY,
-            0.1,
-            Color::ORANGE,
-        );
+        gizmos.sphere(end.translation(), Quat::IDENTITY, 0.1, Color::ORANGE);
+
+        for (entity, _, _, _) in query_placeholders.iter() {
+            commands.entity(entity).despawn_recursive();
+        }
+
+        let start = GlobalTransform::IDENTITY;
+        let (edge1, midpoint, edge2) = biarc::compute_biarc(start, end, 1);
+
+        commands.spawn((
+            Name::new("RoadPlaceholder 1"),
+            PbrBundle {
+                transform: start.compute_transform(),
+                mesh: meshes.add(edge1.mesh()),
+                ..default()
+            },
+            edge1.mesh().compute_aabb().unwrap(),
+            edge1,
+        ));
+
+        let aabb2 = edge2.mesh().compute_aabb().unwrap();
+
+        commands.spawn((
+            Name::new("RoadPlaceholder 2"),
+            PbrBundle {
+                transform: midpoint,
+                mesh: meshes.add(edge2.mesh()),
+                ..default()
+            },
+            aabb2,
+            edge2,
+        ));
 
         return;
     }
@@ -119,7 +149,7 @@ fn move_road_placeholder(
         return;
     };
 
-    let Ok((mut handle, transform, mut edge)) = query.get_single_mut() else {
+    let Ok((_, mut handle, transform, mut edge)) = query_placeholders.get_single_mut() else {
         return;
     };
 
