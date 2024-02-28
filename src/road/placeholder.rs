@@ -102,18 +102,15 @@ fn move_road_placeholder(
 
         gizmos.sphere(hitpoint, Quat::IDENTITY, 1.0, Color::GREEN);
 
-        let mid_to_point = Vec3::new(
-            local_hitpoint.x - edge.radius,
-            local_hitpoint.y,
-            local_hitpoint.z,
+        let length = edge.coordinates_to_length(local_hitpoint.xz());
+        let a = edge.interpolate_lane(length, edge.lanes);
+
+        gizmos.sphere(
+            transform.transform_point(a.translation),
+            Quat::IDENTITY,
+            0.1,
+            Color::ORANGE,
         );
-
-        let mid_to_point_circle =
-            mid_to_point / mid_to_point.length() * (edge.radius.abs() - 0.25 * edge.lanes as f32);
-        let a = Vec3::new(edge.radius, 0.0, 0.0) + mid_to_point_circle;
-        let a = transform.transform_point(a);
-
-        gizmos.sphere(a, Quat::IDENTITY, 0.1, Color::ORANGE);
 
         return;
     }

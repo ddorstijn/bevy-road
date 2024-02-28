@@ -119,6 +119,10 @@ impl RoadEdge {
         }
     }
 
+    pub fn interpolate_lane(&self, length: f32, lane: u8) -> Transform {
+        self.interpolate(length, lane as f32 * ROAD_WIDTH)
+    }
+
     pub fn get_end_transform(&self, lane: Option<u8>) -> Transform {
         if lane.is_none() {
             return self.interpolate(self.length, 0.0);
