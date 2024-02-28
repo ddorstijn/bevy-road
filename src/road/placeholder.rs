@@ -1,4 +1,7 @@
-use bevy::{input::common_conditions::input_just_released, prelude::*};
+use bevy::{
+    input::{common_conditions::input_just_released, mouse::MouseMotion},
+    prelude::*,
+};
 
 use crate::{raycast::Raycast, states::GameState, GroundMarker};
 
@@ -10,14 +13,10 @@ impl Plugin for PlaceholderPlugin {
         app.add_systems(
             Update,
             (
-                (
-                    start_building.run_if(input_just_released(MouseButton::Left)),
-                    hover_road,
-                )
+                (start_building.run_if(input_just_released(MouseButton::Left)),)
                     .in_set(BuildSystemSet::NotBuilding),
                 (
-                    adjust_lanes,
-                    move_road_placeholder.after(adjust_lanes),
+                    move_road_placeholder.run_if(on_event::<MouseMotion>()),
                     finalize_road.run_if(input_just_released(MouseButton::Left)),
                 )
                     .in_set(BuildSystemSet::Building),
@@ -54,7 +53,7 @@ enum BuildSystemSet {
 }
 
 fn start_building(
-    raycast: Raycast<RoadSpawner>,
+    raycast: Raycast<With<RoadSpawner>>,
     node_query: Query<&GlobalTransform>,
     mut commands: Commands,
 ) {
@@ -80,71 +79,60 @@ fn start_building(
 pub struct RoadPlaceholder;
 
 fn move_road_placeholder(
-    raycast: Raycast<GroundMarker>,
+    raycast_edges: Raycast<(With<RoadEdge>, Without<RoadPlaceholder>)>,
+    raycast_ground: Raycast<With<GroundMarker>>,
+    query_edges: Query<(&GlobalTransform, &RoadEdge), Without<RoadPlaceholder>>,
     mut query: Query<(&mut Handle<Mesh>, &GlobalTransform, &mut RoadEdge), With<RoadPlaceholder>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut gizmos: Gizmos,
 ) {
-    let Some((_, hitpoint)) = raycast.cursor_ray() else {
-        return;
-    };
-
-    let count = query.iter().count();
-
-    if count == 1 {
-        let Ok((mut handle, transform, mut edge)) = query.get_single_mut() else {
-            return;
+    for (entity, hitpoint) in raycast_edges.cursor_ray_intersections().into_iter() {
+        let Ok((transform, edge)) = query_edges.get(entity) else {
+            continue;
         };
 
-        let point = transform
+        let local_hitpoint = transform
             .compute_matrix()
             .inverse()
             .transform_point(hitpoint);
-        *edge = RoadEdge::new(point, edge.lanes);
-        if edge.length != 0.0 {
-            *handle = meshes.add(edge.mesh());
+
+        if !edge.check_hit(local_hitpoint) {
+            continue;
         }
-    }
-}
 
-fn adjust_lanes(
-    mut query: Query<&mut RoadEdge, With<RoadPlaceholder>>,
-    keys: Res<ButtonInput<KeyCode>>,
-) {
-    let mut edge = query.single_mut();
-    if keys.just_pressed(KeyCode::Digit1) {
-        edge.lanes = 1
-    }
+        gizmos.sphere(hitpoint, Quat::IDENTITY, 1.0, Color::GREEN);
 
-    if keys.just_pressed(KeyCode::Digit2) {
-        edge.lanes = 2
-    }
+        let mid_to_point = Vec3::new(
+            local_hitpoint.x - edge.radius,
+            local_hitpoint.y,
+            local_hitpoint.z,
+        );
 
-    if keys.just_pressed(KeyCode::Digit3) {
-        edge.lanes = 3
-    }
+        let mid_to_point_circle =
+            mid_to_point / mid_to_point.length() * (edge.radius.abs() - 0.25 * edge.lanes as f32);
+        let a = Vec3::new(edge.radius, 0.0, 0.0) + mid_to_point_circle;
+        let a = transform.transform_point(a);
 
-    if keys.just_pressed(KeyCode::Digit4) {
-        edge.lanes = 4
+        gizmos.sphere(a, Quat::IDENTITY, 0.1, Color::ORANGE);
+
+        return;
     }
 
-    if keys.just_pressed(KeyCode::Digit5) {
-        edge.lanes = 5
-    }
+    let Some((_, hitpoint)) = raycast_ground.cursor_ray() else {
+        return;
+    };
 
-    if keys.just_pressed(KeyCode::Digit6) {
-        edge.lanes = 6
-    }
+    let Ok((mut handle, transform, mut edge)) = query.get_single_mut() else {
+        return;
+    };
 
-    if keys.just_pressed(KeyCode::Digit7) {
-        edge.lanes = 7
-    }
-
-    if keys.just_pressed(KeyCode::Digit8) {
-        edge.lanes = 8
-    }
-
-    if keys.just_pressed(KeyCode::Digit9) {
-        edge.lanes = 9
+    let point = transform
+        .compute_matrix()
+        .inverse()
+        .transform_point(hitpoint);
+    *edge = RoadEdge::new(point, edge.lanes);
+    if edge.length != 0.0 {
+        *handle = meshes.add(edge.mesh());
     }
 }
 
@@ -220,35 +208,5 @@ fn hide_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
 fn show_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
     for mut visibility in query.iter_mut() {
         *visibility = Visibility::Visible;
-    }
-}
-
-fn hover_road(
-    mut gizmos: Gizmos,
-    raycast: Raycast<RoadEdge>,
-    query: Query<(&GlobalTransform, &RoadEdge), Without<RoadPlaceholder>>,
-) {
-    for (entity, hitpoint) in raycast.cursor_ray_intersections().into_iter() {
-        let Ok((transform, edge)) = query.get(entity) else {
-            return;
-        };
-
-        if !edge.check_hit(
-            transform
-                .compute_matrix()
-                .inverse()
-                .transform_point(hitpoint),
-        ) {
-            continue;
-        }
-
-        gizmos.sphere(hitpoint, Quat::IDENTITY, 1.0, Color::GREEN);
-
-        gizmos.sphere(
-            transform.translation() + transform.right() * edge.lanes as f32,
-            Quat::IDENTITY,
-            0.5,
-            Color::ORANGE,
-        );
     }
 }

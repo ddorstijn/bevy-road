@@ -1,5 +1,8 @@
 use bevy::{
-    ecs::system::{lifetimeless::Read, SystemParam},
+    ecs::{
+        query::QueryFilter,
+        system::{lifetimeless::Read, SystemParam},
+    },
     math::bounding::{Aabb3d, RayCast3d},
     prelude::*,
     render::primitives::Aabb,
@@ -9,7 +12,7 @@ use bevy::{
 use crate::camera::PanOrbitCamera;
 
 #[derive(SystemParam)]
-pub struct Raycast<'w, 's, T: bevy::prelude::Component> {
+pub struct Raycast<'w, 's, T: 'static + QueryFilter> {
     primary_window: Query<'w, 's, Read<Window>, With<PrimaryWindow>>,
     main_camera: Query<'w, 's, (Read<Camera>, Read<GlobalTransform>), With<PanOrbitCamera>>,
     objects: Query<
@@ -21,11 +24,11 @@ pub struct Raycast<'w, 's, T: bevy::prelude::Component> {
             Read<GlobalTransform>,
             Read<ViewVisibility>,
         ),
-        With<T>,
+        T,
     >,
 }
 
-impl<'w, 's, T: bevy::prelude::Component> Raycast<'w, 's, T> {
+impl<'w, 's, T: QueryFilter> Raycast<'w, 's, T> {
     pub fn cursor_ray_intersections(&self) -> Vec<(Entity, Vec3)> {
         let Some(cursor_position) = self.primary_window.single().cursor_position() else {
             return Vec::new();
@@ -46,7 +49,7 @@ impl<'w, 's, T: bevy::prelude::Component> Raycast<'w, 's, T> {
                 let dir = Direction3d::new_unchecked(
                     world_to_model.transform_vector3(ray.direction.into()),
                 );
-                let cast = RayCast3d::new(origin, dir, 100.0);
+                let cast = RayCast3d::new(origin, dir, 10000.0);
                 (
                     entity,
                     cast.aabb_intersection_at(&Aabb3d {

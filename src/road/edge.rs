@@ -67,6 +67,26 @@ impl RoadEdge {
         }
     }
 
+    pub fn coordinates_to_length(&self, coords: Vec2) -> f32 {
+        // Get the vector from center to endpoint, but flip along the x-axis in case center is positive.
+        // This is necessary because the angle is calculated counter-clockwise and from the positive x axis.
+        // We want the angle clockwise because z is inverted
+        let reciprocal = match self.radius.is_sign_positive() {
+            true => Vec2::new(-coords.x + self.radius, coords.y),
+            false => Vec2::new(coords.x - self.radius, coords.y),
+        };
+
+        let angle = reciprocal.y.atan2(reciprocal.x);
+
+        // atan returns angle between [-PI, PI], transform it to [0, 2PI]
+        let angle = match angle.is_sign_positive() {
+            true => TAU - angle,
+            false => angle.abs(),
+        };
+
+        (angle * self.radius).abs()
+    }
+
     fn interpolate_arc(&self, length: f32, offset: f32) -> Transform {
         let length = match length > self.length {
             true => self.length,
