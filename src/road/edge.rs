@@ -119,7 +119,7 @@ impl RoadEdge {
         }
     }
 
-    pub fn interpolate_lane(&self, length: f32, lane: u8) -> Transform {
+    pub fn interpolate_lane(&self, length: f32, lane: i32) -> Transform {
         self.interpolate(length, lane as f32 * ROAD_WIDTH)
     }
 

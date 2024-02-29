@@ -89,6 +89,7 @@ fn move_road_placeholder(
     mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
 ) {
+    // Do we need to calculate biarc
     for (entity, hitpoint) in raycast_edges.cursor_ray_intersections().into_iter() {
         let Ok((hit_transform, hit_edge)) = query_edges.get(entity) else {
             continue;
@@ -104,7 +105,16 @@ fn move_road_placeholder(
         }
 
         let length = hit_edge.coordinates_to_length(local_hitpoint.xz());
-        let end = hit_transform.mul_transform(hit_edge.interpolate_lane(length, hit_edge.lanes));
+        let modifier = match Vec2::new(local_hitpoint.x - hit_edge.radius, local_hitpoint.z)
+            .length_squared()
+            > hit_edge.radius.powi(2)
+        {
+            true => -1,
+            false => 1,
+        };
+
+        let end = hit_transform
+            .mul_transform(hit_edge.interpolate_lane(length, hit_edge.lanes as i32 * modifier));
 
         let mut placeholder_iter = query_placeholders.iter_mut();
         let (entity, mut handle, transform, first_edge_placeholder) =
