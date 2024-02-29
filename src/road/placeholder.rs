@@ -87,60 +87,55 @@ fn move_road_placeholder(
         With<RoadPlaceholder>,
     >,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut gizmos: Gizmos,
     mut commands: Commands,
 ) {
     for (entity, hitpoint) in raycast_edges.cursor_ray_intersections().into_iter() {
-        let Ok((transform, edge)) = query_edges.get(entity) else {
+        let Ok((hit_transform, hit_edge)) = query_edges.get(entity) else {
             continue;
         };
 
-        let local_hitpoint = transform
+        let local_hitpoint = hit_transform
             .compute_matrix()
             .inverse()
             .transform_point(hitpoint);
 
-        if !edge.check_hit(local_hitpoint) {
+        if !hit_edge.check_hit(local_hitpoint) {
             continue;
         }
 
-        gizmos.sphere(hitpoint, Quat::IDENTITY, 1.0, Color::GREEN);
+        let length = hit_edge.coordinates_to_length(local_hitpoint.xz());
+        let end = hit_transform.mul_transform(hit_edge.interpolate_lane(length, hit_edge.lanes));
 
-        let length = edge.coordinates_to_length(local_hitpoint.xz());
-        let end = transform.mul_transform(edge.interpolate_lane(length, edge.lanes));
+        let mut placeholder_iter = query_placeholders.iter_mut();
+        let (entity, mut handle, transform, first_edge_placeholder) =
+            placeholder_iter.next().unwrap();
+        let (biarc_first_edge, midpoint, biarc_last_edge) =
+            biarc::compute_biarc(*transform, end, first_edge_placeholder.lanes);
 
-        gizmos.sphere(end.translation(), Quat::IDENTITY, 0.1, Color::ORANGE);
+        *handle = meshes.add(biarc_first_edge.mesh());
+        commands.entity(entity).insert(biarc_first_edge);
 
-        for (entity, _, _, _) in query_placeholders.iter() {
-            commands.entity(entity).despawn_recursive();
-        }
+        let Some((entity, mut handle, _, mut placeholder_last_edge)) = placeholder_iter.next()
+        else {
+            commands.spawn((
+                Name::new("RoadPlaceholder 2"),
+                PbrBundle {
+                    transform: midpoint,
+                    mesh: meshes.add(biarc_last_edge.mesh()),
+                    ..default()
+                },
+                biarc_last_edge,
+                RoadPlaceholder,
+            ));
 
-        let start = GlobalTransform::IDENTITY;
-        let (edge1, midpoint, edge2) = biarc::compute_biarc(start, end, 1);
+            return;
+        };
 
-        commands.spawn((
-            Name::new("RoadPlaceholder 1"),
-            PbrBundle {
-                transform: start.compute_transform(),
-                mesh: meshes.add(edge1.mesh()),
-                ..default()
-            },
-            edge1.mesh().compute_aabb().unwrap(),
-            edge1,
-        ));
-
-        let aabb2 = edge2.mesh().compute_aabb().unwrap();
-
-        commands.spawn((
-            Name::new("RoadPlaceholder 2"),
-            PbrBundle {
-                transform: midpoint,
-                mesh: meshes.add(edge2.mesh()),
-                ..default()
-            },
-            aabb2,
-            edge2,
-        ));
+        commands
+            .entity(entity)
+            .insert(GlobalTransform::from(midpoint));
+        *handle = meshes.add(biarc_last_edge.mesh());
+        *placeholder_last_edge = biarc_last_edge;
 
         return;
     }
@@ -149,7 +144,8 @@ fn move_road_placeholder(
         return;
     };
 
-    let Ok((_, mut handle, transform, mut edge)) = query_placeholders.get_single_mut() else {
+    let mut placeholder_iter = query_placeholders.iter_mut();
+    let Some((_, mut handle, transform, mut edge)) = placeholder_iter.next() else {
         return;
     };
 
@@ -161,6 +157,10 @@ fn move_road_placeholder(
     if edge.length != 0.0 {
         *handle = meshes.add(edge.mesh());
     }
+
+    if let Some((entity, _, _, _)) = placeholder_iter.next() {
+        commands.entity(entity).despawn_recursive();
+    }
 }
 
 fn finalize_road(
@@ -170,15 +170,7 @@ fn finalize_road(
 
     query: Query<(Entity, &GlobalTransform, &RoadEdge), With<RoadPlaceholder>>,
 ) {
-    let Ok((entity, global_transform, edge)) = query.get_single() else {
-        return;
-    };
-
-    commands.entity(entity).remove::<RoadPlaceholder>();
-    commands
-        .entity(entity)
-        .insert(edge.mesh().compute_aabb().unwrap());
-
+    let (entity, global_transform, edge) = query.iter().last().unwrap();
     for lane in 0..edge.lanes {
         let end = edge.get_end_transform(Some(lane));
 
@@ -202,6 +194,13 @@ fn finalize_road(
             .id();
 
         commands.entity(entity).add_child(id);
+    }
+
+    for (entity, _, edge) in query.iter() {
+        commands.entity(entity).remove::<RoadPlaceholder>();
+        commands
+            .entity(entity)
+            .insert(edge.mesh().compute_aabb().unwrap());
     }
 
     commands.spawn((
