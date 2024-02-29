@@ -13,7 +13,10 @@ impl Plugin for PlaceholderPlugin {
         app.add_systems(
             Update,
             (
-                (start_building.run_if(input_just_released(MouseButton::Left)),)
+                (
+                    start_building.run_if(input_just_released(MouseButton::Left)),
+                    snip_road.run_if(input_just_released(MouseButton::Right)),
+                )
                     .in_set(BuildSystemSet::NotBuilding),
                 (
                     move_road_placeholder.run_if(on_event::<MouseMotion>()),
@@ -91,6 +94,7 @@ fn move_road_placeholder(
 ) {
     // Do we need to calculate biarc
     for (entity, hitpoint) in raycast_edges.cursor_ray_intersections().into_iter() {
+        // Filter to hit roadedge if applicable
         let Ok((hit_transform, hit_edge)) = query_edges.get(entity) else {
             continue;
         };
@@ -104,6 +108,7 @@ fn move_road_placeholder(
             continue;
         }
 
+        // Calculate midpoint
         let length = hit_edge.coordinates_to_length(local_hitpoint.xz());
         let modifier = match Vec2::new(local_hitpoint.x - hit_edge.radius, local_hitpoint.z)
             .length_squared()
@@ -244,5 +249,53 @@ fn hide_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
 fn show_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
     for mut visibility in query.iter_mut() {
         *visibility = Visibility::Visible;
+    }
+}
+
+fn snip_road(
+    raycast_edges: Raycast<With<RoadEdge>>,
+    mut edges: Query<(&GlobalTransform, &mut RoadEdge)>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    for (entity, hitpoint) in raycast_edges.cursor_ray_intersections().into_iter() {
+        // Filter to hit roadedge if applicable
+        let Ok((hit_transform, mut hit_edge)) = edges.get_mut(entity) else {
+            continue;
+        };
+
+        let local_hitpoint = hit_transform
+            .compute_matrix()
+            .inverse()
+            .transform_point(hitpoint);
+
+        if !hit_edge.check_hit(local_hitpoint) {
+            continue;
+        }
+
+        let endpoint = hit_edge.get_end_transform(None).translation;
+
+        let length_first_half = hit_edge.coordinates_to_length(local_hitpoint.xz());
+        hit_edge.length = length_first_half;
+
+        let start_second_half = hit_edge.get_end_transform(None);
+        let endpoint = start_second_half
+            .compute_matrix()
+            .inverse()
+            .transform_point(endpoint);
+
+        let second_half = RoadEdge::new(endpoint, hit_edge.lanes);
+
+        commands.spawn((
+            Name::new("RoadEdge"),
+            PbrBundle {
+                transform: hit_transform
+                    .mul_transform(start_second_half)
+                    .compute_transform(),
+                mesh: meshes.add(second_half.mesh()),
+                ..default()
+            },
+            second_half,
+        ));
     }
 }
