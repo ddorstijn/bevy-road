@@ -172,7 +172,7 @@ impl Meshable for RoadEdge {
 
         let normals = vec![Vec3::Y; positions.len()];
         let indices = Indices::U32(
-            (0..n as u32 * 2 - 1)
+            (0..(n as u32).max(1) * 2 - 1)
                 .step_by(2)
                 .flat_map(|i| match self.radius.is_sign_positive() {
                     true => [i, i + 1, i + 2, i + 1, i + 3, i + 2],

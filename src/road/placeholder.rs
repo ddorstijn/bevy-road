@@ -28,7 +28,7 @@ impl Plugin for PlaceholderPlugin {
         .add_systems(
             OnExit(GameState::Building),
             (
-                remove_placeholder.run_if(any_with_component::<RoadPlaceholder>),
+                remove_placeholders.run_if(any_with_component::<RoadPlaceholder>),
                 hide_nodes,
             )
                 .in_set(BuildSystemSet::ExitBuildMode),
@@ -234,10 +234,10 @@ fn finalize_road(
     ));
 }
 
-fn remove_placeholder(mut commands: Commands, query: Query<Entity, With<RoadPlaceholder>>) {
-    let entity = query.single();
-
-    commands.entity(entity).despawn_recursive();
+fn remove_placeholders(mut commands: Commands, query: Query<Entity, With<RoadPlaceholder>>) {
+    for entity in query.into_iter() {
+        commands.entity(entity).despawn_recursive();
+    }
 }
 
 fn hide_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
@@ -254,13 +254,13 @@ fn show_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
 
 fn snip_road(
     raycast_edges: Raycast<With<RoadEdge>>,
-    mut edges: Query<(&GlobalTransform, &mut RoadEdge)>,
+    mut edges: Query<(Entity, &GlobalTransform, &mut RoadEdge)>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (entity, hitpoint) in raycast_edges.cursor_ray_intersections().into_iter() {
         // Filter to hit roadedge if applicable
-        let Ok((hit_transform, mut hit_edge)) = edges.get_mut(entity) else {
+        let Ok((entity, hit_transform, mut hit_edge)) = edges.get_mut(entity) else {
             continue;
         };
 
@@ -273,28 +273,35 @@ fn snip_road(
             continue;
         }
 
-        let endpoint = hit_edge.get_end_transform(None).translation;
-
         let length_first_half = hit_edge.coordinates_to_length(local_hitpoint.xz());
+        let length_second_half = hit_edge.length - length_first_half;
+
         hit_edge.length = length_first_half;
+        let mesh_first_half = hit_edge.mesh();
+        let aabb_first_half = mesh_first_half.compute_aabb().unwrap();
 
-        let start_second_half = hit_edge.get_end_transform(None);
-        let endpoint = start_second_half
-            .compute_matrix()
-            .inverse()
-            .transform_point(endpoint);
+        let second_half = RoadEdge {
+            lanes: hit_edge.lanes,
+            radius: hit_edge.radius,
+            length: length_second_half,
+        };
+        let mesh_second_half = hit_edge.mesh();
+        let aabb_second_half = mesh_first_half.compute_aabb().unwrap();
 
-        let second_half = RoadEdge::new(endpoint, hit_edge.lanes);
+        commands
+            .entity(entity)
+            .insert((meshes.add(mesh_first_half), aabb_first_half));
 
         commands.spawn((
             Name::new("RoadEdge"),
             PbrBundle {
                 transform: hit_transform
-                    .mul_transform(start_second_half)
+                    .mul_transform(hit_edge.get_end_transform(None))
                     .compute_transform(),
-                mesh: meshes.add(second_half.mesh()),
+                mesh: meshes.add(mesh_second_half),
                 ..default()
             },
+            aabb_second_half,
             second_half,
         ));
     }
