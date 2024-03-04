@@ -1,12 +1,13 @@
 use bevy::prelude::*;
 use petgraph::graph::Graph;
 
-use self::edge::RoadEdge;
+use self::{edge::RoadEdge, shader::RoadShaderPlugin};
 
 pub mod biarc;
 pub mod edge;
 pub mod node;
 pub mod placeholder;
+pub mod shader;
 
 #[derive(Resource, Default, Deref, DerefMut)]
 pub struct RoadGraph(Graph<Entity, Entity>);
@@ -17,7 +18,8 @@ impl Plugin for RoadPlugin {
         app.init_resource::<RoadGraph>()
             .register_type::<RoadEdge>()
             .add_systems(Startup, test_biarc)
-            .add_plugins(placeholder::PlaceholderPlugin);
+            .add_plugins(placeholder::PlaceholderPlugin)
+            .add_plugins(RoadShaderPlugin);
     }
 }
 
