@@ -3,7 +3,7 @@ use std::f32::consts::PI;
 use bevy::prelude::*;
 use camera::{CameraPlugin, PanOrbitCamera};
 use debug::DebugPlugin;
-use road::{node::RoadSpawner, RoadPlugin};
+use road::{RoadPlugin, RoadSpawner};
 use states::GameStatePlugin;
 
 pub mod camera;
@@ -52,19 +52,6 @@ fn setup_scene(
         Name::new("Sun"),
     ));
 
-    let plane = Plane3d::new(Vec3::Y).mesh().size(100.0, 100.0).build();
-    commands.spawn((
-        plane.compute_aabb().unwrap(),
-        PbrBundle {
-            material: materials.add(Color::rgb(0.0, 0.4, 0.4)),
-            mesh: meshes.add(plane),
-            transform: Transform::from_xyz(0.0, -0.1, 0.0),
-            ..default()
-        },
-        GroundMarker,
-        Name::new("Ground"),
-    ));
-
     let cuboid = Cuboid::from_size(Vec3::ONE).mesh();
     let aabb = cuboid.compute_aabb().unwrap();
     commands.spawn((
@@ -83,6 +70,3 @@ fn setup_scene(
         RoadSpawner,
     ));
 }
-
-#[derive(Component)]
-pub struct GroundMarker;

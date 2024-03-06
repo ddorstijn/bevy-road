@@ -3,9 +3,9 @@ use bevy::{
     prelude::*,
 };
 
-use crate::{raycast::Raycast, road::biarc, states::GameState, GroundMarker};
+use crate::{raycast::Raycast, road::biarc, states::GameState};
 
-use super::{edge::RoadEdge, node::RoadSpawner};
+use super::{edge::RoadEdge, world::GroundMarker, RoadSpawner};
 
 pub struct PlaceholderPlugin;
 impl Plugin for PlaceholderPlugin {

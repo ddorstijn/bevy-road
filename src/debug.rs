@@ -1,6 +1,7 @@
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use crate::road::edge::RoadEdge;
 use crate::road::placeholder::RoadPlaceholder;
@@ -8,7 +9,8 @@ use crate::road::placeholder::RoadPlaceholder;
 pub struct DebugPlugin;
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, debug_edges)
+        app.add_plugins(WorldInspectorPlugin::new())
+            .add_systems(Update, debug_edges)
             .add_systems(Update, debug_road_ends);
     }
 }

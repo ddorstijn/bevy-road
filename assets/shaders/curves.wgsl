@@ -8,25 +8,41 @@ struct Curve {
 
 @group(2) @binding(0) var<storage> curves: array<Curve>;
 
-fn sdCircle(p: vec2f, r: f32) -> f32 {
-    return length(p) - r;
-}
+const PI = 3.14159265359;
 
-fn sdArc(p: vec2f, sc1: vec2f, sc2: vec2f, r1: f32, r2: f32) -> f32 {
-    var q: vec2f = p * mat2x2<f32>(vec2f(sc1.x, sc1.y), vec2f(-sc1.y, sc1.x));
-    q.x = abs(q.x);
-    let k = select(length(q), dot(q, sc2), sc2.y * q.x > sc2.x * q.y);
-    return sqrt(dot(q, q) + r1 * r1 - 2. * r1 * k) - r2;
+fn sd_arc(p_in: vec2<f32>, sc: vec2<f32>, ra: f32, rb: f32) -> f32 {
+    var p = p_in;
+    p.x = abs(p.x);
+    return select(
+        abs(length(p) - ra),
+        length(p - sc * ra),
+        sc.y * p.x > sc.x * p.y
+    ) - rb;
 }
 
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
-    var col: vec3<f32>;
+    var col: vec4<f32>;
+
+    let aperture = (PI * 1.5) * 0.5;
 
     for (var i: u32 = 0; i < arrayLength(&curves); i++) {
-        col += mix(vec3(0.0), vec3(1.0), step(sdCircle(in.world_position.xz - curves[i].center, curves[i].radius), curves[i].radius));
+        let rotation = mat2x2<f32>(sin(PI), cos(PI), -cos(PI), sin(PI));
+        let pos = (in.world_position.xz - curves[i].center - vec2(-0.1, 0.0)) * rotation;
+        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, vec2(sin(aperture), cos(aperture)), curves[i].radius, curves[i].thickness), curves[i].thickness));
     }
 
-    return vec4(col, 1.0);
-    // return in.position / in.uv.x;
+    for (var i: u32 = 0; i < arrayLength(&curves); i++) {
+        let rotation = mat2x2<f32>(sin(PI), cos(PI), -cos(PI), sin(PI));
+        let pos = (in.world_position.xz - curves[i].center - vec2(0.1, 0.0)) * rotation;
+        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, vec2(sin(aperture), cos(aperture)), curves[i].radius, curves[i].thickness), curves[i].thickness));
+    }
+
+    for (var i: u32 = 0; i < arrayLength(&curves); i++) {
+        let rotation = mat2x2<f32>(sin(PI), cos(PI), -cos(PI), sin(PI));
+        let pos = (in.world_position.xz - curves[i].center - vec2(0.75, 0.0)) * rotation;
+        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, vec2(sin(aperture), cos(aperture)), curves[i].radius, curves[i].thickness), curves[i].thickness));
+    }
+
+    return col;
 }

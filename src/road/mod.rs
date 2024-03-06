@@ -1,72 +1,22 @@
 use bevy::prelude::*;
-use petgraph::graph::Graph;
 
-use self::{edge::RoadEdge, shader::RoadShaderPlugin};
+use self::{edge::RoadEdge, shader::RoadShaderPlugin, world::RoadGridPlugin};
 
 pub mod biarc;
 pub mod edge;
-pub mod node;
 pub mod placeholder;
 pub mod shader;
-
-#[derive(Resource, Default, Deref, DerefMut)]
-pub struct RoadGraph(Graph<Entity, Entity>);
+pub mod world;
 
 pub struct RoadPlugin;
 impl Plugin for RoadPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<RoadGraph>()
-            .register_type::<RoadEdge>()
-            .add_systems(Startup, test_biarc)
+        app.register_type::<RoadEdge>()
             .add_plugins(placeholder::PlaceholderPlugin)
-            .add_plugins(RoadShaderPlugin);
+            .add_plugins(RoadShaderPlugin)
+            .add_plugins(RoadGridPlugin);
     }
 }
 
-// We can create our own gizmo config group!
-#[derive(Default, Reflect, GizmoConfigGroup)]
-pub struct BiarcGizmos {}
-
-fn test_biarc(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
-    let start = GlobalTransform::from(Transform {
-        translation: Vec3::new(100.0, 0.0, 125.0),
-        rotation: Quat::from_axis_angle(Vec3::Y, 0.2171996894 * std::f32::consts::PI),
-        ..default()
-    });
-    let end = GlobalTransform::from(Transform {
-        translation: Vec3::new(140.0, 0.0, 250.0),
-        rotation: Quat::from_axis_angle(Vec3::Y, -0.5 * std::f32::consts::PI),
-        ..default()
-    });
-
-    let (edge1, midpoint, edge2) = biarc::compute_biarc(start, end, 1);
-
-    commands.spawn((
-        Name::new("RoadPlaceholder 1"),
-        PbrBundle {
-            transform: start.compute_transform(),
-            mesh: meshes.add(edge1.mesh()),
-            ..default()
-        },
-        edge1.mesh().compute_aabb().unwrap(),
-        edge1,
-    ));
-
-    let aabb2 = edge2.mesh().compute_aabb().unwrap();
-    println!(
-        "aabb: {:?}, center: {}",
-        aabb2,
-        midpoint.translation + midpoint.right() * edge2.radius
-    );
-
-    commands.spawn((
-        Name::new("RoadPlaceholder 2"),
-        PbrBundle {
-            transform: midpoint,
-            mesh: meshes.add(edge2.mesh()),
-            ..default()
-        },
-        aabb2,
-        edge2,
-    ));
-}
+#[derive(Component)]
+pub struct RoadSpawner;
