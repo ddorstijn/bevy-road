@@ -70,12 +70,6 @@ impl From<&RoadEdge> for Curve {
             thickness: edge.lanes() as f32 * ROAD_WIDTH,
         };
 
-        println!(
-            "s: {}, c: {}",
-            edge.rotation().x / PI,
-            edge.rotation().y / PI
-        );
-
         curve
     }
 }

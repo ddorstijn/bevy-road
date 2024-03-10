@@ -39,8 +39,16 @@ fn debug_edges(
             edge.angle(),
             edge.radius(),
             edge.center(),
-            Quat::from_rotation_y(edge.rotation().x.asin()),
+            Quat::from_rotation_y(edge.rotation().to_angle()),
             Color::NAVY,
+        );
+
+        gizmos.line(edge.start.translation, edge.end.translation, Color::YELLOW);
+
+        gizmos.ray(
+            edge.center(),
+            edge.rotation().extend(0.0).xzy(),
+            Color::PINK,
         );
 
         point = rot.mul_vec3(point);

@@ -26,11 +26,11 @@ fn sd_arc(p_in: vec2<f32>, sc: vec2<f32>, ra: f32, rb: f32) -> f32 {
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     var col = vec4(0.0);
 
+
     for (var i = u32(0); i < arrayLength(&curves); i++) {
-        // let rot = mat2x2(curves[i].rotation.y, curves[i].rotation.x, -curves[i].rotation.x, curves[i].rotation.y);
-        let rot = 0.0;
-        let pos = (in.world_position.xz - curves[i].center);
-        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, curves[i].angle, curves[i].radius, curves[i].thickness), curves[i].thickness));
+        let rotation = mat2x2(curves[i].rotation.y, -curves[i].rotation.x, curves[i].rotation.x, curves[i].rotation.y);
+        let pos = (in.world_position.xz - curves[i].center) * rotation;
+        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, curves[i].angle, abs(curves[i].radius), curves[i].thickness), curves[i].thickness));
     }
 
     return col;

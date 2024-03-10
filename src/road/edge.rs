@@ -15,8 +15,8 @@ enum Twist {
 #[derive(Component, Debug, Default, Reflect)]
 #[reflect(Component, Default)]
 pub struct RoadEdge {
-    start: Transform,
-    end: Transform,
+    pub start: Transform,
+    pub end: Transform,
     center: Vec3,
     radius: f32,
     angle: f32,
@@ -66,8 +66,14 @@ impl RoadEdge {
         };
 
         let center = center.extend(0.0).xzy();
-        let end =
-            Transform::from_translation(end).looking_to(c_end.perp().extend(0.0).xzy(), Vec3::Y);
+
+        let end_direction = match twist {
+            Twist::Clockwise => -c_end.perp().extend(0.0).xzy(),
+            Twist::CounterClockwise => c_end.perp().extend(0.0).xzy(),
+            Twist::Straight => start.forward().into(),
+        };
+
+        let end = Transform::from_translation(end).looking_to(end_direction, Vec3::Y);
 
         RoadEdge {
             start,
@@ -83,7 +89,7 @@ impl RoadEdge {
     pub fn rotation(&self) -> Vec2 {
         let midpoint = self.start.translation + self.end.translation * 0.5;
         let c_midpoint = midpoint - self.center;
-        if c_midpoint.length_squared() < 0.001 {
+        if c_midpoint.length_squared() < f32::EPSILON {
             return self.start.forward().xz();
         }
 

@@ -132,7 +132,7 @@ fn finalize_road(
             ))
             .id();
 
-        commands.entity(entity).add_child(id);
+        commands.entity(id).set_parent_in_place(entity);
     }
 
     for (entity, _, _) in query.iter() {
@@ -142,13 +142,15 @@ fn finalize_road(
     commands.spawn((
         Name::new("RoadPlaceholder"),
         PbrBundle {
-            transform: global_transform
-                .mul_transform(edge.get_end_transform(None))
-                .compute_transform(),
+            transform: edge.get_end_transform(None),
             ..default()
         },
         RoadPlaceholder,
-        RoadEdge::default(),
+        RoadEdge::new(
+            edge.get_end_transform(None),
+            edge.get_end_transform(None).translation,
+            edge.lanes(),
+        ),
     ));
 }
 

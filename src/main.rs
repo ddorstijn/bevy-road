@@ -60,7 +60,7 @@ fn setup_scene(
             mesh: meshes.add(cuboid),
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 0.0),
-                // rotation: Quat::from_axis_angle(Vec3::Y, -PI / 2.0),
+                rotation: Quat::from_axis_angle(Vec3::Y, -PI / 2.0),
                 ..default()
             },
             ..default()
