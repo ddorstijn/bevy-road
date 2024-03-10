@@ -1,199 +1,195 @@
 use std::f32::consts::TAU;
 
 use bevy::prelude::*;
-use bevy::render::mesh::Indices;
-use bevy::render::render_asset::RenderAssetUsages;
-use bevy::render::render_resource::PrimitiveTopology;
 
-const PRECISION: f32 = 0.001;
-const ROAD_WIDTH: f32 = 0.5;
-const RESOLUTION: usize = 5;
+use super::ROAD_WIDTH;
+
+#[derive(Debug, Default, Reflect)]
+enum Twist {
+    #[default]
+    CounterClockwise,
+    Clockwise,
+    Straight,
+}
 
 #[derive(Component, Debug, Default, Reflect)]
 #[reflect(Component, Default)]
 pub struct RoadEdge {
-    pub radius: f32,
-    pub length: f32,
-    pub lanes: u8,
+    start: Transform,
+    end: Transform,
+    center: Vec3,
+    radius: f32,
+    angle: f32,
+    twist: Twist,
+    lanes: u8,
 }
 
 impl RoadEdge {
-    pub fn new(endpoint: Vec3, lanes: u8) -> Self {
-        let endpoint2d = endpoint.xz();
-        let midpoint = endpoint2d / 2.0;
-        let bisector = midpoint.perp();
+    pub fn new(start: Transform, end: Vec3, lanes: u8) -> Self {
+        let startpoint = start.translation.xz();
+        let endpoint = end.xz();
+        let chord = endpoint - startpoint;
+        let tangent = start.forward().xz();
+        let normal = start.left().xz();
 
-        // The line is parrallel to te x-axis
-        if bisector.y.abs() < PRECISION {
+        let scalar = chord.dot(normal);
+        if scalar.abs() < f32::EPSILON {
+            let center = (end - start.translation) / 2.0;
+            let end = Transform::from_translation(end).looking_to(start.forward().into(), Vec3::Y);
+            let radius = (endpoint - startpoint).length();
             return Self {
-                radius: 0.0,
-                length: match endpoint.z.is_sign_negative() {
-                    true => endpoint.length(),
-                    false => 0.0,
-                },
+                start,
+                end,
+                center,
+                radius,
+                angle: 0.0,
+                twist: Twist::Straight,
                 lanes,
             };
         }
 
-        // Calculate radius for y = 0.
-        // x = midpoint.x + bisector.x * t
-        // y = midpoint.y + bisector.y * t = 0
-        // t = -midpoint.y / bisector.y
-        // x = midpoint.x + bisector.x * (-midpoint.y / bisector.y)
-        let radius = midpoint.x + bisector.x * (-midpoint.y / bisector.y);
+        let radius = chord.length_squared() / (2.0 * scalar);
+        let center = startpoint + normal * radius;
 
-        // Get the vector from center to endpoint, but flip along the x-axis in case center is positive.
-        // This is necessary because the angle is calculated counter-clockwise and from the positive x axis.
-        // We want the angle clockwise because z is inverted
-        let reciprocal = match radius.is_sign_positive() {
-            true => Vec2::new(-endpoint2d.x + radius, endpoint2d.y),
-            false => Vec2::new(endpoint2d.x - radius, endpoint2d.y),
+        let c_start = startpoint - center;
+        let c_end = endpoint - center;
+
+        let twist = match c_start.perp_dot(tangent).is_sign_negative() {
+            true => Twist::Clockwise,
+            false => Twist::CounterClockwise,
         };
 
-        let angle = reciprocal.y.atan2(reciprocal.x);
-
-        // atan returns angle between [-PI, PI], transform it to [0, 2PI]
-        let angle = match angle.is_sign_positive() {
-            true => TAU - angle,
-            false => angle.abs(),
+        // map [-π, π] to [0, 2π]
+        let mut angle = c_start.angle_between(c_end).rem_euclid(TAU);
+        if let Twist::Clockwise = twist {
+            angle = TAU - angle;
         };
 
-        let length = (angle * radius).abs();
+        let center = center.extend(0.0).xzy();
+        let end =
+            Transform::from_translation(end).looking_to(c_end.perp().extend(0.0).xzy(), Vec3::Y);
 
-        Self {
+        RoadEdge {
+            start,
+            end,
+            center,
             radius,
-            length,
+            angle,
+            twist,
             lanes,
         }
     }
 
-    pub fn coordinates_to_length(&self, coords: Vec2) -> f32 {
-        // Get the vector from center to endpoint, but flip along the x-axis in case center is positive.
-        // This is necessary because the angle is calculated counter-clockwise and from the positive x axis.
-        // We want the angle clockwise because z is inverted
-        let reciprocal = match self.radius.is_sign_positive() {
-            true => Vec2::new(-coords.x + self.radius, coords.y),
-            false => Vec2::new(coords.x - self.radius, coords.y),
-        };
-
-        let angle = reciprocal.y.atan2(reciprocal.x);
-
-        // atan returns angle between [-PI, PI], transform it to [0, 2PI]
-        let angle = match angle.is_sign_positive() {
-            true => TAU - angle,
-            false => angle.abs(),
-        };
-
-        (angle * self.radius).abs()
-    }
-
-    fn interpolate_arc(&self, length: f32, offset: f32) -> Transform {
-        let length = match length > self.length {
-            true => self.length,
-            false => length,
-        };
-
-        let center = Vec3::new(self.radius, 0.0, 0.0);
-        let angle = -length / self.radius;
-
-        let mut transform = Transform::default();
-        transform.rotate_around(center, Quat::from_axis_angle(Vec3::Y, angle));
-        transform.translation += (center - transform.translation).normalize() * offset;
-
-        transform
-    }
-
-    fn interpolate_line(&self, length: f32, offset: f32) -> Transform {
-        let length = match length > self.length {
-            true => self.length,
-            false => length,
-        };
-
-        Transform::default().with_translation(-Vec3::Z * length + Vec3::X * offset)
-    }
-
-    pub fn interpolate(&self, length: f32, offset: f32) -> Transform {
-        match self.radius.abs() < PRECISION {
-            true => self.interpolate_line(length, offset),
-            false => self.interpolate_arc(length, offset),
+    pub fn rotation(&self) -> Vec2 {
+        let midpoint = self.start.translation + self.end.translation * 0.5;
+        let c_midpoint = midpoint - self.center;
+        if c_midpoint.length_squared() < 0.001 {
+            return self.start.forward().xz();
         }
-    }
 
-    pub fn interpolate_lane(&self, length: f32, lane: i32) -> Transform {
-        self.interpolate(length, lane as f32 * ROAD_WIDTH)
+        let c_end = self.end.translation - self.center;
+
+        let inverse = c_end.dot(self.start.forward().into()).signum();
+        // Center to midpoint on chord. Which is also the center of the circle. Normalized, this gives sine cosine of angle.
+        // If c_end is pointing opposite of the tangent the center of the circle is opposite
+        (c_midpoint * inverse).xz().normalize()
     }
 
     pub fn get_end_transform(&self, lane: Option<u8>) -> Transform {
-        if lane.is_none() {
-            return self.interpolate(self.length, 0.0);
+        match lane {
+            Some(l) => self
+                .end
+                .with_translation(self.end.translation + self.end.left() * ROAD_WIDTH * l as f32),
+            None => self.end,
         }
+    }
 
-        let start_point = -0.5 * ROAD_WIDTH * (self.lanes as f32 - 1.0);
-        self.interpolate(self.length, start_point + lane.unwrap() as f32 * ROAD_WIDTH)
+    pub fn length(&self) -> f32 {
+        match self.twist {
+            Twist::Straight => self.radius,
+            _ => self.radius * self.angle,
+        }
+    }
+
+    pub fn coord_to_length(&self, coord: Vec3) -> f32 {
+        let c_coord = coord - self.center;
+        let mut angle = (self.start.translation - self.center)
+            .angle_between(c_coord)
+            .rem_euclid(TAU);
+
+        if let Twist::Clockwise = self.twist {
+            angle = TAU - angle;
+        };
+
+        self.radius * angle
+    }
+
+    pub fn interpolate(&self, length: f32) -> Transform {
+        let angle = match self.twist {
+            Twist::Straight => {
+                return self
+                    .start
+                    .with_translation(self.start.translation + self.start.forward() * length)
+            }
+            Twist::Clockwise => -length / self.radius,
+            Twist::CounterClockwise => length / self.radius,
+        };
+
+        let mut rotated = self.start.clone();
+        rotated.rotate_around(self.center, Quat::from_axis_angle(Vec3::Y, angle));
+
+        rotated
     }
 
     pub fn check_hit(&self, hitpoint: Vec3) -> bool {
-        let length = Vec3::new(hitpoint.x - self.radius, 0.0, hitpoint.z).length();
-        let road_thickness = self.lanes as f32 * ROAD_WIDTH / 2.0;
+        let local = self
+            .start
+            .compute_matrix()
+            .inverse()
+            .transform_point(hitpoint);
 
-        if length < self.radius.abs() - road_thickness {
-            return false;
+        match self.twist {
+            Twist::Straight => {
+                if local.x.abs() > self.lanes as f32 * ROAD_WIDTH * 0.5 {
+                    return false;
+                }
+
+                if local.z > 0.0 || local.z > -self.length() {
+                    return false;
+                }
+
+                true
+            }
+            _ => {
+                let length = (local - self.center).length();
+                let road_thickness = self.lanes as f32 * ROAD_WIDTH * 0.5;
+
+                if length < self.radius.abs() - road_thickness {
+                    return false;
+                }
+
+                if length > self.radius.abs() + road_thickness {
+                    return false;
+                }
+
+                true
+            }
         }
-
-        if length > self.radius.abs() + road_thickness {
-            return false;
-        }
-
-        true
     }
-}
 
-impl Meshable for RoadEdge {
-    type Output = Mesh;
-
-    fn mesh(&self) -> Self::Output {
-        let n = self.length.ceil() as usize * RESOLUTION;
-        let positions = (0..=n)
-            .flat_map(|i| {
-                [
-                    self.interpolate(
-                        i as f32 / RESOLUTION as f32,
-                        -ROAD_WIDTH * self.lanes as f32 / 2.,
-                    )
-                    .translation,
-                    self.interpolate(
-                        i as f32 / RESOLUTION as f32,
-                        ROAD_WIDTH * self.lanes as f32 / 2.,
-                    )
-                    .translation,
-                ]
-            })
-            .collect::<Vec<Vec3>>();
-
-        let normals = vec![Vec3::Y; positions.len()];
-        let indices = Indices::U32(
-            (0..(n as u32).max(1) * 2 - 1)
-                .step_by(2)
-                .flat_map(|i| match self.radius.is_sign_positive() {
-                    true => [i, i + 1, i + 2, i + 1, i + 3, i + 2],
-                    false => [i, i + 2, i + 1, i + 1, i + 2, i + 3],
-                })
-                .collect::<Vec<u32>>(),
-        );
-
-        Mesh::new(
-            PrimitiveTopology::TriangleList,
-            RenderAssetUsages::default(),
-        )
-        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
-        // .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
-        .with_inserted_indices(indices)
+    pub fn center(&self) -> Vec3 {
+        self.center
     }
-}
 
-impl From<RoadEdge> for Mesh {
-    fn from(edge: RoadEdge) -> Self {
-        edge.mesh()
+    pub fn radius(&self) -> f32 {
+        self.radius
+    }
+
+    pub fn lanes(&self) -> u8 {
+        self.lanes
+    }
+
+    pub fn angle(&self) -> f32 {
+        self.angle
     }
 }

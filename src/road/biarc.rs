@@ -9,19 +9,11 @@ pub fn compute_biarc(
 ) -> (RoadEdge, Transform, RoadEdge) {
     let midpoint = compute_midpoint(start, end);
 
-    let start_local_mid = start.compute_matrix().inverse().transform_point(midpoint);
+    let edge1 = RoadEdge::new(Transform::from(start), midpoint, lanes);
 
-    let edge1 = RoadEdge::new(start_local_mid, lanes);
-
-    let mid_transform = start.mul_transform(edge1.get_end_transform(None));
-
-    let mid_local_end = mid_transform
-        .compute_matrix()
-        .inverse()
-        .transform_point(end.translation());
-
-    let edge2 = RoadEdge::new(mid_local_end, lanes);
-    (edge1, mid_transform.compute_transform(), edge2)
+    let mid_transform = edge1.get_end_transform(None);
+    let edge2 = RoadEdge::new(mid_transform, end.translation(), lanes);
+    (edge1, mid_transform, edge2)
 }
 
 fn compute_midpoint(start: GlobalTransform, end: GlobalTransform) -> Vec3 {

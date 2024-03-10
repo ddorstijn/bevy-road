@@ -1,12 +1,14 @@
-#import bevy_pbr::forward_io::VertexOutput
+#import bevy_pbr::forward_io::VertexOutput;
 
 struct Curve {
+    rotation: vec2<f32>,
     center: vec2<f32>,
+    angle: vec2<f32>,
     radius: f32,
     thickness: f32,
 }
 
-@group(2) @binding(0) var<storage> curves: array<Curve>;
+@group(2) @binding(2) var<storage> curves: array<Curve>;
 
 const PI = 3.14159265359;
 
@@ -22,26 +24,13 @@ fn sd_arc(p_in: vec2<f32>, sc: vec2<f32>, ra: f32, rb: f32) -> f32 {
 
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
-    var col: vec4<f32>;
+    var col = vec4(0.0);
 
-    let aperture = (PI * 1.5) * 0.5;
-
-    for (var i: u32 = 0; i < arrayLength(&curves); i++) {
-        let rotation = mat2x2<f32>(sin(PI), cos(PI), -cos(PI), sin(PI));
-        let pos = (in.world_position.xz - curves[i].center - vec2(-0.1, 0.0)) * rotation;
-        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, vec2(sin(aperture), cos(aperture)), curves[i].radius, curves[i].thickness), curves[i].thickness));
-    }
-
-    for (var i: u32 = 0; i < arrayLength(&curves); i++) {
-        let rotation = mat2x2<f32>(sin(PI), cos(PI), -cos(PI), sin(PI));
-        let pos = (in.world_position.xz - curves[i].center - vec2(0.1, 0.0)) * rotation;
-        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, vec2(sin(aperture), cos(aperture)), curves[i].radius, curves[i].thickness), curves[i].thickness));
-    }
-
-    for (var i: u32 = 0; i < arrayLength(&curves); i++) {
-        let rotation = mat2x2<f32>(sin(PI), cos(PI), -cos(PI), sin(PI));
-        let pos = (in.world_position.xz - curves[i].center - vec2(0.75, 0.0)) * rotation;
-        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, vec2(sin(aperture), cos(aperture)), curves[i].radius, curves[i].thickness), curves[i].thickness));
+    for (var i = u32(0); i < arrayLength(&curves); i++) {
+        // let rot = mat2x2(curves[i].rotation.y, curves[i].rotation.x, -curves[i].rotation.x, curves[i].rotation.y);
+        let rot = 0.0;
+        let pos = (in.world_position.xz - curves[i].center);
+        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, curves[i].angle, curves[i].radius, curves[i].thickness), curves[i].thickness));
     }
 
     return col;

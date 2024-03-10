@@ -13,5 +13,5 @@ opt-level = 3
 
 
 [dependencies]
-bevy = { version = "0.13", features = ["file_watcher", "dynamic_linking"] }
+bevy = { version = "0.13" }
 bevy-inspector-egui = "0.23.3"
