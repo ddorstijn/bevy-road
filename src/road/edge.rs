@@ -1,11 +1,11 @@
 use std::f32::consts::TAU;
 
-use bevy::prelude::*;
+use bevy::{math::Vec3A, prelude::*, render::primitives::Aabb};
 
 use super::ROAD_WIDTH;
 
-#[derive(Debug, Default, Reflect)]
-enum Twist {
+#[derive(Debug, Default, Reflect, Clone, Copy)]
+pub enum Twist {
     #[default]
     CounterClockwise,
     Clockwise,
@@ -15,8 +15,8 @@ enum Twist {
 #[derive(Component, Debug, Default, Reflect)]
 #[reflect(Component, Default)]
 pub struct RoadEdge {
-    pub start: Transform,
-    pub end: Transform,
+    start: Transform,
+    end: Transform,
     center: Vec3,
     radius: f32,
     angle: f32,
@@ -25,7 +25,27 @@ pub struct RoadEdge {
 }
 
 impl RoadEdge {
-    pub fn new(start: Transform, end: Vec3, lanes: u8) -> Self {
+    pub fn new(
+        start: Transform,
+        end: Transform,
+        center: Vec3,
+        radius: f32,
+        angle: f32,
+        twist: Twist,
+        lanes: u8,
+    ) -> Self {
+        Self {
+            start,
+            end,
+            center,
+            angle,
+            radius,
+            twist,
+            lanes,
+        }
+    }
+
+    pub fn from_start_end(start: Transform, end: Vec3, lanes: u8) -> Self {
         let startpoint = start.translation.xz();
         let endpoint = end.xz();
         let chord = endpoint - startpoint;
@@ -118,7 +138,13 @@ impl RoadEdge {
         }
     }
 
-    pub fn coord_to_length(&self, coord: Vec3) -> f32 {
+    pub fn resize(&mut self, angle: f32) {
+        let new_end = self.interpolate(self.radius * angle);
+        self.angle = angle;
+        self.end = new_end;
+    }
+
+    pub fn coord_to_angle(&self, coord: Vec3) -> f32 {
         let c_coord = coord - self.center;
         let mut angle = (self.start.translation - self.center)
             .angle_between(c_coord)
@@ -128,7 +154,11 @@ impl RoadEdge {
             angle = TAU - angle;
         };
 
-        self.radius * angle
+        angle
+    }
+
+    pub fn coord_to_length(&self, coord: Vec3) -> f32 {
+        self.radius * self.coord_to_angle(coord)
     }
 
     pub fn interpolate(&self, length: f32) -> Transform {
@@ -146,6 +176,15 @@ impl RoadEdge {
         rotated.rotate_around(self.center, Quat::from_axis_angle(Vec3::Y, angle));
 
         rotated
+    }
+
+    pub fn aabb(&self) -> Aabb {
+        let r = self.radius + self.lanes as f32 * ROAD_WIDTH;
+
+        Aabb {
+            center: self.center.into(),
+            half_extents: Vec3A::new(r, 0.1, r),
+        }
     }
 
     pub fn check_hit(&self, hitpoint: Vec3) -> bool {
@@ -184,6 +223,14 @@ impl RoadEdge {
         }
     }
 
+    pub fn start(&self) -> Transform {
+        self.start
+    }
+
+    pub fn end(&self) -> Transform {
+        self.end
+    }
+
     pub fn center(&self) -> Vec3 {
         self.center
     }
@@ -198,5 +245,9 @@ impl RoadEdge {
 
     pub fn angle(&self) -> f32 {
         self.angle
+    }
+
+    pub fn twist(&self) -> Twist {
+        self.twist
     }
 }

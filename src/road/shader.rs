@@ -3,7 +3,10 @@ use bevy::{
     render::render_resource::{AsBindGroup, ShaderRef, ShaderType},
 };
 
-use super::{edge::RoadEdge, ROAD_WIDTH};
+use super::{
+    edge::{RoadEdge, Twist},
+    ROAD_WIDTH,
+};
 
 pub struct RoadShaderPlugin;
 impl Plugin for RoadShaderPlugin {
@@ -23,9 +26,7 @@ fn init_shader(
         MaterialMeshBundle {
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
             mesh: meshes.add(Plane3d::new(Vec3::Y).mesh().size(100.0, 100.0)),
-            material: materials.add(CustomMaterial {
-                curves: Vec::with_capacity(0),
-            }),
+            material: materials.add(CustomMaterial { curves: Vec::new() }),
             ..default()
         },
         ShaderMarker,
@@ -37,15 +38,8 @@ fn update_shader(
     edges: Query<&RoadEdge>,
     mut materials: ResMut<Assets<CustomMaterial>>,
 ) {
-    let handle = shader.single();
-    let mat = materials.get_mut(handle).unwrap();
-
-    let curves = edges
-        .into_iter()
-        .map(|edge| Curve::from(edge))
-        .collect::<Vec<Curve>>();
-
-    mat.curves = curves;
+    let mat = materials.get_mut(shader.single()).unwrap();
+    mat.curves = edges.into_iter().map(|edge| Curve::from(edge)).collect();
 }
 
 #[derive(Component)]
@@ -58,6 +52,7 @@ struct Curve {
     angle: Vec2,
     radius: f32,
     thickness: f32,
+    straight: u32,
 }
 
 impl From<&RoadEdge> for Curve {
@@ -68,6 +63,7 @@ impl From<&RoadEdge> for Curve {
             angle: Vec2::new((edge.angle() * 0.5).sin(), (edge.angle() * 0.5).cos()),
             radius: edge.radius(),
             thickness: edge.lanes() as f32 * ROAD_WIDTH,
+            straight: matches!(edge.twist(), Twist::Straight) as u32,
         };
 
         curve

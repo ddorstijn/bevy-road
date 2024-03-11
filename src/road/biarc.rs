@@ -9,10 +9,10 @@ pub fn compute_biarc(
 ) -> (RoadEdge, Transform, RoadEdge) {
     let midpoint = compute_midpoint(start, end);
 
-    let edge1 = RoadEdge::new(Transform::from(start), midpoint, lanes);
+    let edge1 = RoadEdge::from_start_end(Transform::from(start), midpoint, lanes);
 
-    let mid_transform = edge1.get_end_transform(None);
-    let edge2 = RoadEdge::new(mid_transform, end.translation(), lanes);
+    let mid_transform = edge1.end();
+    let edge2 = RoadEdge::from_start_end(mid_transform, end.translation(), lanes);
     (edge1, mid_transform, edge2)
 }
 

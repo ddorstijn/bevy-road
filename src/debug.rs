@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
-use bevy::render::view::RenderLayers;
+use bevy::render::primitives::Aabb;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use crate::road::edge::RoadEdge;
@@ -15,6 +15,7 @@ impl Plugin for DebugPlugin {
             .add_systems(Startup, setup_gizmos)
             .add_systems(Update, debug_edges)
             .add_systems(Update, draw_axis)
+            .add_systems(Update, debug_aabb)
             .add_systems(Update, debug_road_ends);
     }
 }
@@ -55,7 +56,11 @@ fn debug_edges(
             Color::NAVY,
         );
 
-        gizmos.line(edge.start.translation, edge.end.translation, Color::YELLOW);
+        gizmos.line(
+            edge.start().translation,
+            edge.end().translation,
+            Color::YELLOW,
+        );
 
         gizmos.ray(
             edge.center(),
@@ -87,19 +92,21 @@ fn debug_edges(
     }
 }
 
-// fn debug_aabb(aabbs: Query<(&Aabb, &GlobalTransform)>, mut gizmos: Gizmos) {
-//     for (aabb, transform) in aabbs.iter() {
-//         gizmos.cuboid(transform.compute_transform(), Color::WHITE).;
-//     }
-// }
+fn debug_aabb(aabbs: Query<&Aabb>, mut gizmos: Gizmos) {
+    for aabb in aabbs.iter() {
+        let transform = Transform::from_translation(aabb.center.into())
+            .with_scale(2.0 * Vec3::from(aabb.half_extents));
+        gizmos.cuboid(transform, Color::GREEN);
+    }
+}
 
 fn debug_road_ends(
-    query: Query<(&RoadEdge, &GlobalTransform), Without<RoadPlaceholder>>,
+    query: Query<&RoadEdge, Without<RoadPlaceholder>>,
     mut gizmos: Gizmos<DebugGizmos>,
 ) {
-    for (edge, transform) in query.into_iter() {
-        let end = transform.mul_transform(edge.get_end_transform(None));
-        gizmos.ray(end.translation(), end.forward(), Color::YELLOW_GREEN);
+    for edge in query.into_iter() {
+        let end = edge.end();
+        gizmos.ray(end.translation, *end.forward(), Color::YELLOW_GREEN);
     }
 }
 

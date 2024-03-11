@@ -74,7 +74,7 @@ fn start_building(
             ..default()
         },
         RoadPlaceholder,
-        RoadEdge::new(Transform::from(*start), hitpoint, 1),
+        RoadEdge::from_start_end(Transform::from(*start), hitpoint, 1),
     ));
 }
 
@@ -95,7 +95,7 @@ fn move_road_placeholder(
         return;
     };
 
-    *edge = RoadEdge::new(Transform::from(*transform), hitpoint, edge.lanes());
+    *edge = RoadEdge::from_start_end(Transform::from(*transform), hitpoint, edge.lanes());
 
     if let Some((entity, _, _)) = placeholder_iter.next() {
         commands.entity(entity).despawn_recursive();
@@ -135,22 +135,19 @@ fn finalize_road(
         commands.entity(id).set_parent_in_place(entity);
     }
 
-    for (entity, _) in query.iter() {
+    for (entity, edge) in query.iter() {
         commands.entity(entity).remove::<RoadPlaceholder>();
+        commands.entity(entity).insert(edge.aabb());
     }
 
     commands.spawn((
         Name::new("RoadPlaceholder"),
         PbrBundle {
-            transform: edge.get_end_transform(None),
+            transform: edge.end(),
             ..default()
         },
         RoadPlaceholder,
-        RoadEdge::new(
-            edge.get_end_transform(None),
-            edge.get_end_transform(None).translation,
-            edge.lanes(),
-        ),
+        RoadEdge::from_start_end(edge.end(), edge.end().translation, edge.lanes()),
     ));
 }
 
@@ -174,13 +171,12 @@ fn show_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
 
 fn snip_road(
     raycast_edges: Raycast<With<RoadEdge>>,
-    mut edges: Query<(Entity, &GlobalTransform, &mut RoadEdge)>,
+    mut edges: Query<&mut RoadEdge>,
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (entity, hitpoint) in raycast_edges.cursor_ray_intersections().into_iter() {
         // Filter to hit roadedge if applicable
-        let Ok((entity, hit_transform, mut hit_edge)) = edges.get_mut(entity) else {
+        let Ok(mut hit_edge) = edges.get_mut(entity) else {
             continue;
         };
 
@@ -188,31 +184,31 @@ fn snip_road(
             continue;
         }
 
-        let length_first_half = hit_edge.coord_to_length(hitpoint);
-        let length_second_half = hit_edge.length() - length_first_half;
+        let end = hit_edge.end();
+        let angle_first_half = hit_edge.coord_to_angle(hitpoint);
+        let angle_second_half = hit_edge.angle() - angle_first_half;
 
-        // hit_edge.length = length_first_half;
+        hit_edge.resize(angle_first_half);
+        commands.entity(entity).insert(hit_edge.aabb());
 
-        // let second_half = RoadEdge {
-        //     lanes: hit_edge.lanes(),
-        //     radius: hit_edge.radius(),
-        //     length: length_second_half,
-        //     start: hit_edge.get_end_transform(None),
-        //     end: todo!(),
-        //     center: todo!(),
-        //     angle: todo!(),
-        //     twist: todo!(),
-        // };
+        let second_half = RoadEdge::new(
+            hit_edge.end(),
+            end,
+            hit_edge.center(),
+            hit_edge.radius(),
+            angle_second_half,
+            hit_edge.twist(),
+            hit_edge.lanes(),
+        );
 
-        // commands.spawn((
-        //     Name::new("RoadEdge"),
-        //     PbrBundle {
-        //         transform: hit_transform
-        //             .mul_transform(hit_edge.get_end_transform(None))
-        //             .compute_transform(),
-        //         ..default()
-        //     },
-        //     second_half,
-        // ));
+        commands.spawn((
+            Name::new("RoadEdge"),
+            PbrBundle {
+                transform: second_half.start(),
+                ..default()
+            },
+            second_half.aabb(),
+            second_half,
+        ));
     }
 }
