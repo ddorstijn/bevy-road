@@ -8,9 +8,7 @@ struct Curve {
     thickness: f32,
 }
 
-@group(2) @binding(2) var<storage> curves: array<Curve>;
-
-const PI = 3.14159265359;
+@group(2) @binding(0) var<storage> curves: array<Curve>;
 
 fn sd_arc(p_in: vec2<f32>, sc: vec2<f32>, ra: f32, rb: f32) -> f32 {
     var p = p_in;
@@ -24,13 +22,12 @@ fn sd_arc(p_in: vec2<f32>, sc: vec2<f32>, ra: f32, rb: f32) -> f32 {
 
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
-    var col = vec4(0.0);
-
+    var col: vec4<f32>;
 
     for (var i = u32(0); i < arrayLength(&curves); i++) {
         let rotation = mat2x2(curves[i].rotation.y, -curves[i].rotation.x, curves[i].rotation.x, curves[i].rotation.y);
         let pos = (in.world_position.xz - curves[i].center) * rotation;
-        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, curves[i].angle, abs(curves[i].radius), curves[i].thickness), curves[i].thickness));
+        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, curves[i].angle, curves[i].radius, curves[i].thickness), curves[i].thickness));
     }
 
     return col;

@@ -50,6 +50,7 @@ impl RoadEdge {
 
         let radius = chord.length_squared() / (2.0 * scalar);
         let center = startpoint + normal * radius;
+        let radius = radius.abs();
 
         let c_start = startpoint - center;
         let c_end = endpoint - center;
@@ -87,7 +88,7 @@ impl RoadEdge {
     }
 
     pub fn rotation(&self) -> Vec2 {
-        let midpoint = self.start.translation + self.end.translation * 0.5;
+        let midpoint = (self.start.translation + self.end.translation) * 0.5;
         let c_midpoint = midpoint - self.center;
         if c_midpoint.length_squared() < f32::EPSILON {
             return self.start.forward().xz();

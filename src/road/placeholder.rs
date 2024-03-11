@@ -107,9 +107,9 @@ fn finalize_road(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 
-    query: Query<(Entity, &GlobalTransform, &RoadEdge), With<RoadPlaceholder>>,
+    query: Query<(Entity, &RoadEdge), With<RoadPlaceholder>>,
 ) {
-    let (entity, global_transform, edge) = query.iter().last().unwrap();
+    let (entity, edge) = query.iter().last().unwrap();
     for lane in 0..edge.lanes() {
         let end = edge.get_end_transform(Some(lane));
 
@@ -135,7 +135,7 @@ fn finalize_road(
         commands.entity(id).set_parent_in_place(entity);
     }
 
-    for (entity, _, _) in query.iter() {
+    for (entity, _) in query.iter() {
         commands.entity(entity).remove::<RoadPlaceholder>();
     }
 

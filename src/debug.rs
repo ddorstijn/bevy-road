@@ -1,6 +1,7 @@
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
+use bevy::render::view::RenderLayers;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use crate::road::edge::RoadEdge;
@@ -10,15 +11,26 @@ pub struct DebugPlugin;
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(WorldInspectorPlugin::new())
+            .init_gizmo_group::<DebugGizmos>()
+            .add_systems(Startup, setup_gizmos)
             .add_systems(Update, debug_edges)
             .add_systems(Update, draw_axis)
             .add_systems(Update, debug_road_ends);
     }
 }
 
+#[derive(Default, Reflect, GizmoConfigGroup)]
+struct DebugGizmos {}
+
+fn setup_gizmos(mut config_store: ResMut<GizmoConfigStore>) {
+    let (my_config, _) = config_store.config_mut::<DebugGizmos>();
+
+    my_config.depth_bias = -1.0;
+}
+
 fn debug_edges(
     edge_query: Query<(&GlobalTransform, &RoadEdge), With<RoadPlaceholder>>,
-    mut gizmos: Gizmos,
+    mut gizmos: Gizmos<DebugGizmos>,
 ) {
     for (transform, edge) in edge_query.iter() {
         // gizmos.line(transform.translation(), transform.translation() + transform.right(), Color::WHITE);
@@ -83,7 +95,7 @@ fn debug_edges(
 
 fn debug_road_ends(
     query: Query<(&RoadEdge, &GlobalTransform), Without<RoadPlaceholder>>,
-    mut gizmos: Gizmos,
+    mut gizmos: Gizmos<DebugGizmos>,
 ) {
     for (edge, transform) in query.into_iter() {
         let end = transform.mul_transform(edge.get_end_transform(None));
@@ -91,7 +103,7 @@ fn debug_road_ends(
     }
 }
 
-fn draw_axis(mut gizmos: Gizmos) {
+fn draw_axis(mut gizmos: Gizmos<DebugGizmos>) {
     gizmos.ray(Vec3::ZERO, Vec3::Z, Color::BLUE);
     gizmos.ray(Vec3::ZERO, Vec3::Y, Color::GREEN);
     gizmos.ray(Vec3::ZERO, Vec3::X, Color::RED);

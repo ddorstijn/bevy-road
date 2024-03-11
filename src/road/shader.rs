@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use bevy::{
     prelude::*,
     render::render_resource::{AsBindGroup, ShaderRef, ShaderType},
@@ -23,9 +21,11 @@ fn init_shader(
 ) {
     commands.spawn((
         MaterialMeshBundle {
-            transform: Transform::from_xyz(0.0, 1.0, 0.0),
+            transform: Transform::from_xyz(0.0, 0.0, 0.0),
             mesh: meshes.add(Plane3d::new(Vec3::Y).mesh().size(100.0, 100.0)),
-            material: materials.add(CustomMaterial { curves: Vec::new() }),
+            material: materials.add(CustomMaterial {
+                curves: Vec::with_capacity(0),
+            }),
             ..default()
         },
         ShaderMarker,
@@ -77,7 +77,7 @@ impl From<&RoadEdge> for Curve {
 // This struct defines the data that will be passed to your shader
 #[derive(Asset, AsBindGroup, TypePath, Debug, Clone)]
 struct CustomMaterial {
-    #[storage(2, read_only)]
+    #[storage(0, read_only)]
     pub curves: Vec<Curve>,
 }
 
@@ -86,9 +86,5 @@ struct CustomMaterial {
 impl Material for CustomMaterial {
     fn fragment_shader() -> ShaderRef {
         "shaders/curves.wgsl".into()
-    }
-
-    fn alpha_mode(&self) -> AlphaMode {
-        AlphaMode::Premultiplied
     }
 }

@@ -28,8 +28,8 @@ fn setup_scene(
     // Environment and player
     commands.spawn((
         Camera3dBundle {
-            transform: Transform::from_translation(Vec3::new(0.0, 5., 1.0))
-                .looking_at(Vec3::ZERO, Vec3::Y),
+            transform: Transform::from_translation(Vec3::new(0.0, 10., 0.0))
+                .looking_to(-Vec3::Y, Vec3::Y),
             ..default()
         },
         Name::new("Player"),
