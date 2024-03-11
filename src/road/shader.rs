@@ -77,7 +77,7 @@ impl From<&RoadEdge> for Curve {
 // This struct defines the data that will be passed to your shader
 #[derive(Asset, AsBindGroup, TypePath, Debug, Clone)]
 struct CustomMaterial {
-    #[storage(0, read_only)]
+    #[storage(2, read_only)]
     pub curves: Vec<Curve>,
 }
 

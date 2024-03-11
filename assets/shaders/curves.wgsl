@@ -8,7 +8,7 @@ struct Curve {
     thickness: f32,
 }
 
-@group(2) @binding(0) var<storage> curves: array<Curve>;
+@group(2) @binding(2) var<storage> curves: array<Curve>;
 
 fn sd_arc(p_in: vec2<f32>, sc: vec2<f32>, ra: f32, rb: f32) -> f32 {
     var p = p_in;
