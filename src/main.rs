@@ -29,7 +29,7 @@ fn setup_scene(
     commands.spawn((
         Camera3dBundle {
             transform: Transform::from_translation(Vec3::new(0.0, 10., 0.0))
-                .looking_to(-Vec3::Y, Vec3::Y),
+                .with_rotation(Quat::from_axis_angle(Vec3::X, -0.5 * PI)),
             ..default()
         },
         Name::new("Player"),

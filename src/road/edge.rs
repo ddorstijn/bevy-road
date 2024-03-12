@@ -1,10 +1,10 @@
-use std::f32::consts::TAU;
+use std::f32::consts::{PI, TAU};
 
 use bevy::{math::Vec3A, prelude::*, render::primitives::Aabb};
 
 use super::ROAD_WIDTH;
 
-#[derive(Debug, Default, Reflect, Clone, Copy)]
+#[derive(Debug, Default, Reflect, Clone, Copy, PartialEq)]
 pub enum Twist {
     #[default]
     CounterClockwise,
@@ -184,12 +184,76 @@ impl RoadEdge {
     }
 
     pub fn aabb(&self) -> Aabb {
-        let r = self.radius + self.lanes as f32 * ROAD_WIDTH;
+        let half_width = self.lanes as f32 * ROAD_WIDTH;
 
-        Aabb {
-            center: self.center.into(),
-            half_extents: Vec3A::new(r, 0.1, r),
+        let s = self.start.translation.xz();
+        let e = self.end.translation.xz();
+        let c = self.center.xz();
+
+        if Twist::Straight == self.twist {
+            let min_x = s.x.min(e.x);
+            let min_z = s.y.min(e.y);
+
+            let extend_x = c.x - min_x + half_width;
+            let extend_z = c.y - min_z + half_width;
+
+            return Aabb {
+                center: self.center.into(),
+                half_extents: Vec3A::new(extend_x, 0.1, extend_z),
+            };
         }
+
+        let c_min_x = c.x - self.radius - half_width;
+        let c_max_x = c.x + self.radius + half_width;
+        let c_max_z = c.y - self.radius - half_width;
+        let c_min_z = c.y + self.radius + half_width;
+
+        let s_angle = (s - c).to_angle().rem_euclid(TAU);
+        let e_angle = (e - c).to_angle().rem_euclid(TAU);
+
+        let q0: bool;
+        let q1: bool;
+        let q2: bool;
+        let q3: bool;
+
+        match self.twist {
+            Twist::CounterClockwise => {
+                q0 = s_angle >= e_angle;
+                q1 = (s_angle - 0.5 * PI).rem_euclid(TAU) >= (e_angle - 0.5 * PI).rem_euclid(TAU);
+                q2 = (s_angle - PI).rem_euclid(TAU) >= (e_angle - PI).rem_euclid(TAU);
+                q3 = (s_angle - 1.5 * PI).rem_euclid(TAU) >= (e_angle - 1.5 * PI).rem_euclid(TAU);
+            }
+            Twist::Clockwise => {
+                q0 = s_angle <= e_angle;
+                q1 = (s_angle - 0.5 * PI).rem_euclid(TAU) <= (e_angle - 0.5 * PI).rem_euclid(TAU);
+                q2 = (s_angle - PI).rem_euclid(TAU) <= (e_angle - PI).rem_euclid(TAU);
+                q3 = (s_angle - 1.5 * PI).rem_euclid(TAU) <= (e_angle - 1.5 * PI).rem_euclid(TAU);
+            }
+            Twist::Straight => panic!("Straight lines don't have angles"),
+        }
+
+        let max_x = if q0 {
+            c_max_x
+        } else {
+            s.x.max(e.x) + half_width
+        };
+        let min_z = if q1 {
+            c_min_z
+        } else {
+            s.y.max(e.y) + half_width
+        };
+        let min_x = if q2 {
+            c_min_x
+        } else {
+            s.x.min(e.x) - half_width
+        };
+        let max_z = if q3 {
+            c_max_z
+        } else {
+            s.y.min(e.y) - half_width
+        };
+
+        Aabb::from_min_max(Vec3::new(min_x, -0.1, min_z), Vec3::new(max_x, 0.1, max_z))
     }
 
     pub fn check_hit(&self, hitpoint: Vec3) -> bool {
@@ -228,6 +292,7 @@ impl RoadEdge {
         }
     }
 
+    // Properties
     pub fn start(&self) -> Transform {
         self.start
     }

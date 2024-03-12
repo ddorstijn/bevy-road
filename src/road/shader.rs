@@ -56,8 +56,6 @@ struct Curve {
 
 impl From<&RoadEdge> for Curve {
     fn from(edge: &RoadEdge) -> Self {
-        println!("{:?}", edge);
-
         // Use center and angle as start and end point for straight lines
         match edge.twist() {
             Twist::Straight => Self {
