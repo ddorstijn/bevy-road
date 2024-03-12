@@ -53,8 +53,8 @@ impl RoadEdge {
         let normal = start.left().xz();
 
         let scalar = chord.dot(normal);
-        if scalar.abs() < f32::EPSILON {
-            let center = (end - start.translation) / 2.0;
+        if scalar.abs() < f32::EPSILON * 100.0 {
+            let center = start.translation + (end - start.translation) / 2.0;
             let end = Transform::from_translation(end).looking_to(start.forward().into(), Vec3::Y);
             let radius = (endpoint - startpoint).length();
             return Self {
@@ -108,18 +108,23 @@ impl RoadEdge {
     }
 
     pub fn rotation(&self) -> Vec2 {
-        let midpoint = (self.start.translation + self.end.translation) * 0.5;
-        let c_midpoint = midpoint - self.center;
-        if c_midpoint.length_squared() < f32::EPSILON {
-            return self.start.forward().xz();
+        match self.twist {
+            Twist::Straight => self.start.forward().xz(),
+            _ => {
+                let midpoint = (self.start.translation + self.end.translation) * 0.5;
+                let c_midpoint = midpoint - self.center;
+                if c_midpoint.length_squared() < f32::EPSILON {
+                    return self.start.forward().xz();
+                }
+
+                let c_end = self.end.translation - self.center;
+
+                let inverse = c_end.dot(self.start.forward().into()).signum();
+                // Center to midpoint on chord. Which is also the center of the circle. Normalized, this gives sine cosine of angle.
+                // If c_end is pointing opposite of the tangent the center of the circle is opposite
+                (c_midpoint * inverse).xz().normalize()
+            }
         }
-
-        let c_end = self.end.translation - self.center;
-
-        let inverse = c_end.dot(self.start.forward().into()).signum();
-        // Center to midpoint on chord. Which is also the center of the circle. Normalized, this gives sine cosine of angle.
-        // If c_end is pointing opposite of the tangent the center of the circle is opposite
-        (c_midpoint * inverse).xz().normalize()
     }
 
     pub fn get_end_transform(&self, lane: Option<u8>) -> Transform {

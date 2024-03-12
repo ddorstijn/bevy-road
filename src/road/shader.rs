@@ -52,21 +52,29 @@ struct Curve {
     angle: Vec2,
     radius: f32,
     thickness: f32,
-    straight: u32,
 }
 
 impl From<&RoadEdge> for Curve {
     fn from(edge: &RoadEdge) -> Self {
-        let curve = Self {
-            rotation: edge.rotation(),
-            center: edge.center().xz(),
-            angle: Vec2::new((edge.angle() * 0.5).sin(), (edge.angle() * 0.5).cos()),
-            radius: edge.radius(),
-            thickness: edge.lanes() as f32 * ROAD_WIDTH,
-            straight: matches!(edge.twist(), Twist::Straight) as u32,
-        };
+        println!("{:?}", edge);
 
-        curve
+        // Use center and angle as start and end point for straight lines
+        match edge.twist() {
+            Twist::Straight => Self {
+                rotation: Vec2::new(0.0, 1.0),
+                center: edge.start().translation.xz(),
+                angle: edge.end().translation.xz() - edge.start().translation.xz(),
+                radius: 0.0,
+                thickness: edge.lanes() as f32 * ROAD_WIDTH,
+            },
+            _ => Self {
+                rotation: edge.rotation(),
+                center: edge.center().xz(),
+                angle: Vec2::new((edge.angle() * 0.5).sin(), (edge.angle() * 0.5).cos()),
+                radius: edge.radius(),
+                thickness: edge.lanes() as f32 * ROAD_WIDTH,
+            },
+        }
     }
 }
 

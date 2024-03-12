@@ -11,8 +11,7 @@ struct Curve {
     center: vec2<f32>,
     angle: vec2<f32>,
     radius: f32,
-    thickness: f32,
-    straight: u32,
+    thickness: f32
 }
 
 @group(2) @binding(2) var<storage> curves: array<Curve>;
@@ -39,14 +38,22 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     var col: vec4<f32>;
 
     for (var i = u32(0); i < arrayLength(&curves); i++) {
+        // Issue with 0 length dynamic storage buffer causes array to be length 1 with all zeroes when array length should be 0.
+        // This creates the issue where every pixel is 0 (because mutliplied by rotation which is 0), causing everything to fall in the field
+        if curves[i].rotation.y + curves[i].rotation.x == 0.0 {
+            continue;
+        }
+
         let rotation = mat2x2(curves[i].rotation.y, -curves[i].rotation.x, curves[i].rotation.x, curves[i].rotation.y);
         let pos = (in.world_position.xz - curves[i].center) * rotation;
-        // let distance = select(
-        //     sd_arc(pos, curves[i].angle, curves[i].radius, curves[i].thickness),
-        //     sd_segment(pos, vec2(0.0, -curves[i].radius * 0.5), vec2(0.0, curves[i].radius * 0.5), curves[i].thickness),
-        //     curves[i].straight == 0
-        // );
-        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, curves[i].angle, curves[i].radius, curves[i].thickness / 2.0), curves[i].thickness / 2.0));
+
+        // Radius is set to 0 for straight lines 
+        let distance = select(
+            sd_segment(pos, curves[i].center, curves[i].angle, curves[i].thickness),
+            sd_arc(pos, curves[i].angle, curves[i].radius, curves[i].thickness),
+            bool(curves[i].radius)
+        );
+        col += mix(vec4(0.0), vec4(1.0), step(distance, 0.0));
     }
 
     return col;
