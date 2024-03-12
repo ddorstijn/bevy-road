@@ -22,6 +22,7 @@ impl Plugin for PlaceholderPlugin {
                     move_road_placeholder.run_if(on_event::<MouseMotion>()),
                     finalize_road.run_if(input_just_released(MouseButton::Left)),
                 )
+                    .chain()
                     .in_set(BuildSystemSet::Building),
             ),
         )

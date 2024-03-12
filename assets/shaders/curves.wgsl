@@ -46,7 +46,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         //     sd_segment(pos, vec2(0.0, -curves[i].radius * 0.5), vec2(0.0, curves[i].radius * 0.5), curves[i].thickness),
         //     curves[i].straight == 0
         // );
-        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, curves[i].angle, curves[i].radius, curves[i].thickness), curves[i].thickness));
+        col += mix(vec4(0.0), vec4(1.0), step(sd_arc(pos, curves[i].angle, curves[i].radius, curves[i].thickness / 2.0), curves[i].thickness / 2.0));
     }
 
     return col;
