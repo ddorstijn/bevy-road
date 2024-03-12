@@ -148,7 +148,7 @@ fn finalize_road(
             ..default()
         },
         RoadPlaceholder,
-        RoadEdge::from_start_end(edge.end(), edge.end().translation, edge.lanes()),
+        RoadEdge::from_start_end(edge.end(), Vec3::ZERO, edge.lanes()),
     ));
 }
 

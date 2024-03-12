@@ -15,17 +15,7 @@ use crate::camera::PanOrbitCamera;
 pub struct Raycast<'w, 's, T: 'static + QueryFilter> {
     primary_window: Query<'w, 's, Read<Window>, With<PrimaryWindow>>,
     main_camera: Query<'w, 's, (Read<Camera>, Read<GlobalTransform>), With<PanOrbitCamera>>,
-    objects: Query<
-        'w,
-        's,
-        (
-            Entity,
-            Read<Aabb>,
-            Read<GlobalTransform>,
-            Read<ViewVisibility>,
-        ),
-        T,
-    >,
+    objects: Query<'w, 's, (Entity, Read<Aabb>, Read<ViewVisibility>), T>,
 }
 
 impl<'w, 's, T: QueryFilter> Raycast<'w, 's, T> {
@@ -42,14 +32,18 @@ impl<'w, 's, T: QueryFilter> Raycast<'w, 's, T> {
         // Calculate if and where the ray is hitting the ground plane.
         self.objects
             .iter()
-            .filter(|(_, _, _, visibility)| visibility.get())
-            .map(|(entity, aabb, transform, _)| {
-                let world_to_model = transform.compute_matrix().inverse();
-                let origin = world_to_model.transform_point(ray.origin);
-                let dir = Direction3d::new_unchecked(
-                    world_to_model.transform_vector3(ray.direction.into()),
+            .filter(|(_, _, visibility)| visibility.get())
+            .map(|(entity, aabb, _)| {
+                let cast = RayCast3d::new(ray.origin, ray.direction, 10000.0);
+                println!(
+                    "{:?}, {:?}",
+                    Aabb3d {
+                        max: Vec3::from(aabb.max()),
+                        min: Vec3::from(aabb.min()),
+                    },
+                    cast
                 );
-                let cast = RayCast3d::new(origin, dir, 10000.0);
+
                 (
                     entity,
                     cast.aabb_intersection_at(&Aabb3d {

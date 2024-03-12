@@ -205,8 +205,8 @@ impl RoadEdge {
 
         let c_min_x = c.x - self.radius - half_width;
         let c_max_x = c.x + self.radius + half_width;
-        let c_max_z = c.y - self.radius - half_width;
-        let c_min_z = c.y + self.radius + half_width;
+        let c_min_z = c.y - self.radius - half_width;
+        let c_max_z = c.y + self.radius + half_width;
 
         let s_angle = (s - c).to_angle().rem_euclid(TAU);
         let e_angle = (e - c).to_angle().rem_euclid(TAU);
@@ -237,8 +237,8 @@ impl RoadEdge {
         } else {
             s.x.max(e.x) + half_width
         };
-        let min_z = if q1 {
-            c_min_z
+        let max_z = if q1 {
+            c_max_z
         } else {
             s.y.max(e.y) + half_width
         };
@@ -247,8 +247,8 @@ impl RoadEdge {
         } else {
             s.x.min(e.x) - half_width
         };
-        let max_z = if q3 {
-            c_max_z
+        let min_z = if q3 {
+            c_min_z
         } else {
             s.y.min(e.y) - half_width
         };
