@@ -47,8 +47,8 @@ struct WorldSettings {
 #[derive(Component, Debug, Default, Reflect)]
 #[reflect(Component, Default)]
 pub struct WorldTile {
-    edges: HashSet<Entity>,
-    dirty: bool,
+    pub edges: HashSet<Entity>,
+    pub dirty: bool,
 }
 
 #[derive(ShaderType, Debug, Clone)]

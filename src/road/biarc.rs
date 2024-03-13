@@ -2,18 +2,14 @@ use bevy::prelude::*;
 
 use super::edge::RoadEdge;
 
-pub fn compute_biarc(
-    start: Transform,
-    end: Transform,
-    lanes: u8,
-) -> (RoadEdge, Transform, RoadEdge) {
+pub fn compute_biarc(start: Transform, end: Transform, lanes: u8) -> (RoadEdge, RoadEdge) {
     let midpoint = compute_midpoint(start, end);
 
     let edge1 = RoadEdge::from_start_end(start, midpoint, lanes);
 
     let mid_transform = edge1.end();
     let edge2 = RoadEdge::from_start_end(mid_transform, end.translation, lanes);
-    (edge1, mid_transform, edge2)
+    (edge1, edge2)
 }
 
 fn compute_midpoint(start: Transform, end: Transform) -> Vec3 {

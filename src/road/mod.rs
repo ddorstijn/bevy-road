@@ -24,8 +24,8 @@ impl Plugin for RoadPlugin {
             .configure_sets(
                 Update,
                 (
-                    BuildSystemSet::NotBuilding.run_if(not(any_with_component::<RoadPlaceholder>)),
                     BuildSystemSet::Building.run_if(any_with_component::<RoadPlaceholder>),
+                    BuildSystemSet::NotBuilding.run_if(not(any_with_component::<RoadPlaceholder>)),
                     WorldSystemSet,
                 )
                     .chain()

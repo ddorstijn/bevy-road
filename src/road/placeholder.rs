@@ -56,7 +56,6 @@ fn start_building(
 
     commands.spawn((
         Name::new("RoadPlaceholder"),
-        Visibility::default(),
         RoadEdge::from_start_end(Transform::from(*start), hitpoint, 1),
         RoadPlaceholder,
     ));
@@ -66,64 +65,62 @@ fn start_building(
 pub struct RoadPlaceholder;
 
 fn move_road_placeholder(
-    // raycast_edges: Raycast<With<RoadEdge>>,
-    raycast_ground: Raycast<With<WorldTile>>,
-    mut query_placeholders: Query<(Entity, &mut RoadEdge), With<RoadPlaceholder>>,
-    // query_edges: Query<&RoadEdge, Without<RoadPlaceholder>>,
+    world_cast: Raycast<With<WorldTile>>,
+    world_tiles: Query<&WorldTile>,
+    edges: Query<&RoadEdge, Without<RoadPlaceholder>>,
+    mut placeholders: Query<(Entity, &mut RoadEdge), With<RoadPlaceholder>>,
     mut commands: Commands,
 ) {
-    // // Case: Edge
-    // for (entity, hitpoint) in raycast_edges.cursor_ray_intersections().into_iter() {
-    //     // Filter to hit roadedge if applicable
-    //     let Ok(hit_edge) = query_edges.get(entity) else {
-    //         continue;
-    //     };
-
-    //     if !hit_edge.check_hit(hitpoint) {
-    //         continue;
-    //     }
-
-    //     let hit_transform = hit_edge.interpolate(hit_edge.coord_to_length(hitpoint));
-
-    //     let mut placeholder_iter = query_placeholders.iter_mut();
-    //     let (entity, first_edge_placeholder) = placeholder_iter.next().unwrap();
-    //     let (biarc_first_edge, midpoint, biarc_last_edge) = biarc::compute_biarc(
-    //         first_edge_placeholder.start(),
-    //         hit_transform,
-    //         first_edge_placeholder.lanes(),
-    //     );
-
-    //     commands.entity(entity).insert(biarc_first_edge);
-
-    //     let Some((entity, mut placeholder_last_edge)) = placeholder_iter.next() else {
-    //         commands.spawn((
-    //             Name::new("RoadPlaceholder 2"),
-    //
-    //             RoadPlaceholder,
-    //             biarc_last_edge,
-    //         ));
-
-    //         return;
-    //     };
-
-    //     commands
-    //         .entity(entity)
-    //         .insert(GlobalTransform::from(midpoint));
-    //     *placeholder_last_edge = biarc_last_edge;
-
-    //     return;
-    // }
-
-    // Case: ground
-    let Some((_, hitpoint)) = raycast_ground.cursor_ray() else {
+    let Some((tile_entity, hitpoint)) = world_cast.cursor_ray() else {
         return;
     };
 
-    let mut placeholder_iter = query_placeholders.iter_mut();
+    let mut placeholder_iter = placeholders.iter_mut();
     let Some((_, mut edge)) = placeholder_iter.next() else {
         return;
     };
 
+    let possible_edges = world_tiles
+        .get(tile_entity)
+        .unwrap()
+        .edges
+        .iter()
+        .filter_map(|edge_entity| edges.get(*edge_entity).ok())
+        .collect::<Vec<&RoadEdge>>();
+
+    for edge in possible_edges {
+        if !edge.check_hit(hitpoint) {
+            continue;
+        }
+
+        let hit_transform = edge.interpolate(edge.coord_to_length(hitpoint));
+
+        let mut placeholder_iter = placeholders.iter_mut();
+        let (entity, first_edge_placeholder) = placeholder_iter.next().unwrap();
+        let (biarc_first_edge, biarc_last_edge) = biarc::compute_biarc(
+            first_edge_placeholder.start(),
+            hit_transform,
+            first_edge_placeholder.lanes(),
+        );
+
+        commands.entity(entity).insert(biarc_first_edge);
+
+        let Some((_, mut placeholder_last_edge)) = placeholder_iter.next() else {
+            commands.spawn((
+                Name::new("RoadPlaceholder 2"),
+                RoadPlaceholder,
+                biarc_last_edge,
+            ));
+
+            return;
+        };
+
+        *placeholder_last_edge = biarc_last_edge;
+
+        return;
+    }
+
+    // No edge
     *edge = RoadEdge::from_start_end(edge.start(), hitpoint, edge.lanes());
 
     if let Some((entity, _)) = placeholder_iter.next() {
@@ -136,11 +133,16 @@ fn finalize_road(mut commands: Commands, query: Query<(Entity, &RoadEdge), With<
 
     for (entity, _) in query.iter() {
         commands.entity(entity).remove::<RoadPlaceholder>();
+        commands.entity(entity).insert(Name::new("Road Edge"));
     }
 
     commands.spawn((
         Name::new("RoadPlaceholder"),
-        RoadEdge::from_start_end(edge.end(), Vec3::ZERO, edge.lanes()),
+        RoadEdge::from_start_end(
+            edge.end(),
+            edge.end().translation + *edge.end().forward() * 0.01 + *edge.end().left() * 0.01,
+            edge.lanes(),
+        ),
         RoadPlaceholder,
     ));
 }
