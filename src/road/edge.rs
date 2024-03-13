@@ -53,6 +53,7 @@ impl RoadEdge {
         let normal = start.left().xz();
 
         let scalar = chord.dot(normal);
+        // Straight line
         if scalar.abs() < f32::EPSILON * 100.0 {
             let center = start.translation + (end - start.translation) / 2.0;
             let end = Transform::from_translation(end).looking_to(start.forward().into(), Vec3::Y);
@@ -80,20 +81,19 @@ impl RoadEdge {
             false => Twist::CounterClockwise,
         };
 
-        // map [-π, π] to [0, 2π]
-        let mut angle = c_start.angle_between(c_end).rem_euclid(TAU);
-        if let Twist::Clockwise = twist {
-            angle = TAU - angle;
+        let angle = match twist {
+            Twist::CounterClockwise => c_start.angle_between(c_end).rem_euclid(TAU),
+            Twist::Clockwise => (-c_start.angle_between(c_end)).rem_euclid(TAU),
+            Twist::Straight => panic!("Straight roads shouldn't calculate angles"),
+        };
+
+        let end_direction = match twist {
+            Twist::CounterClockwise => c_end.perp().extend(0.0).xzy(),
+            Twist::Clockwise => -c_end.perp().extend(0.0).xzy(),
+            Twist::Straight => panic!("Straight roads shouldn't calculate angles"),
         };
 
         let center = center.extend(0.0).xzy();
-
-        let end_direction = match twist {
-            Twist::Clockwise => -c_end.perp().extend(0.0).xzy(),
-            Twist::CounterClockwise => c_end.perp().extend(0.0).xzy(),
-            Twist::Straight => start.forward().into(),
-        };
-
         let end = Transform::from_translation(end).looking_to(end_direction, Vec3::Y);
 
         RoadEdge {
@@ -150,16 +150,14 @@ impl RoadEdge {
     }
 
     pub fn coord_to_angle(&self, coord: Vec3) -> f32 {
-        let c_coord = coord - self.center;
-        let mut angle = (self.start.translation - self.center)
-            .angle_between(c_coord)
-            .rem_euclid(TAU);
+        let c_start = self.start.translation.xz() - self.center.xz();
+        let c_coord = coord.xz() - self.center.xz();
 
-        if let Twist::Clockwise = self.twist {
-            angle = TAU - angle;
-        };
-
-        angle
+        match self.twist {
+            Twist::CounterClockwise => c_start.angle_between(c_coord).rem_euclid(TAU),
+            Twist::Clockwise => (-c_start.angle_between(c_coord)).rem_euclid(TAU),
+            Twist::Straight => panic!("Straight roads shouldn't calculate angles"),
+        }
     }
 
     pub fn coord_to_length(&self, coord: Vec3) -> f32 {
@@ -173,8 +171,8 @@ impl RoadEdge {
                     .start
                     .with_translation(self.start.translation + self.start.forward() * length)
             }
-            Twist::Clockwise => -length / self.radius,
-            Twist::CounterClockwise => length / self.radius,
+            Twist::Clockwise => length / self.radius,
+            Twist::CounterClockwise => -length / self.radius,
         };
 
         let mut rotated = self.start.clone();
@@ -257,26 +255,10 @@ impl RoadEdge {
     }
 
     pub fn check_hit(&self, hitpoint: Vec3) -> bool {
-        let local = self
-            .start
-            .compute_matrix()
-            .inverse()
-            .transform_point(hitpoint);
-
         match self.twist {
-            Twist::Straight => {
-                if local.x.abs() > self.lanes as f32 * ROAD_WIDTH * 0.5 {
-                    return false;
-                }
-
-                if local.z > 0.0 || local.z > -self.length() {
-                    return false;
-                }
-
-                true
-            }
+            Twist::Straight => true,
             _ => {
-                let length = (local - self.center).length();
+                let length = (hitpoint - self.center).length();
                 let road_thickness = self.lanes as f32 * ROAD_WIDTH * 0.5;
 
                 if length < self.radius.abs() - road_thickness {

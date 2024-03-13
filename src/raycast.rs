@@ -35,15 +35,6 @@ impl<'w, 's, T: QueryFilter> Raycast<'w, 's, T> {
             .filter(|(_, _, visibility)| visibility.get())
             .map(|(entity, aabb, _)| {
                 let cast = RayCast3d::new(ray.origin, ray.direction, 10000.0);
-                println!(
-                    "{:?}, {:?}",
-                    Aabb3d {
-                        max: Vec3::from(aabb.max()),
-                        min: Vec3::from(aabb.min()),
-                    },
-                    cast
-                );
-
                 (
                     entity,
                     cast.aabb_intersection_at(&Aabb3d {
