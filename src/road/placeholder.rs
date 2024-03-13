@@ -5,7 +5,7 @@ use bevy::{
 
 use crate::{raycast::Raycast, states::GameState};
 
-use super::{edge::RoadEdge, world::GroundMarker, RoadSpawner};
+use super::{biarc, edge::RoadEdge, world::WorldTile, RoadSpawner};
 
 pub struct PlaceholderPlugin;
 impl Plugin for PlaceholderPlugin {
@@ -28,28 +28,14 @@ impl Plugin for PlaceholderPlugin {
         )
         .add_systems(
             OnExit(GameState::Building),
-            (
-                remove_placeholders.run_if(any_with_component::<RoadPlaceholder>),
-                hide_nodes,
-            )
-                .in_set(BuildSystemSet::ExitBuildMode),
+            (remove_placeholders, hide_nodes).in_set(BuildSystemSet::ExitBuildMode),
         )
-        .add_systems(OnEnter(GameState::Building), show_nodes)
-        .configure_sets(
-            Update,
-            (
-                BuildSystemSet::NotBuilding.run_if(not(any_with_component::<RoadPlaceholder>)),
-                BuildSystemSet::Building.run_if(any_with_component::<RoadPlaceholder>),
-            )
-                .run_if(in_state(GameState::Building)),
-        )
-        .configure_sets(OnEnter(GameState::Building), BuildSystemSet::EnterBuildMode)
-        .configure_sets(OnExit(GameState::Building), BuildSystemSet::ExitBuildMode);
+        .add_systems(OnEnter(GameState::Building), show_nodes);
     }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Hash, SystemSet)]
-enum BuildSystemSet {
+pub enum BuildSystemSet {
     EnterBuildMode,
     ExitBuildMode,
     Building,
@@ -70,12 +56,9 @@ fn start_building(
 
     commands.spawn((
         Name::new("RoadPlaceholder"),
-        PbrBundle {
-            transform: start.compute_transform(),
-            ..default()
-        },
-        RoadPlaceholder,
+        Visibility::default(),
         RoadEdge::from_start_end(Transform::from(*start), hitpoint, 1),
+        RoadPlaceholder,
     ));
 }
 
@@ -83,72 +66,82 @@ fn start_building(
 pub struct RoadPlaceholder;
 
 fn move_road_placeholder(
-    raycast_ground: Raycast<With<GroundMarker>>,
-    mut query_placeholders: Query<(Entity, &GlobalTransform, &mut RoadEdge), With<RoadPlaceholder>>,
+    // raycast_edges: Raycast<With<RoadEdge>>,
+    raycast_ground: Raycast<With<WorldTile>>,
+    mut query_placeholders: Query<(Entity, &mut RoadEdge), With<RoadPlaceholder>>,
+    // query_edges: Query<&RoadEdge, Without<RoadPlaceholder>>,
     mut commands: Commands,
 ) {
+    // // Case: Edge
+    // for (entity, hitpoint) in raycast_edges.cursor_ray_intersections().into_iter() {
+    //     // Filter to hit roadedge if applicable
+    //     let Ok(hit_edge) = query_edges.get(entity) else {
+    //         continue;
+    //     };
+
+    //     if !hit_edge.check_hit(hitpoint) {
+    //         continue;
+    //     }
+
+    //     let hit_transform = hit_edge.interpolate(hit_edge.coord_to_length(hitpoint));
+
+    //     let mut placeholder_iter = query_placeholders.iter_mut();
+    //     let (entity, first_edge_placeholder) = placeholder_iter.next().unwrap();
+    //     let (biarc_first_edge, midpoint, biarc_last_edge) = biarc::compute_biarc(
+    //         first_edge_placeholder.start(),
+    //         hit_transform,
+    //         first_edge_placeholder.lanes(),
+    //     );
+
+    //     commands.entity(entity).insert(biarc_first_edge);
+
+    //     let Some((entity, mut placeholder_last_edge)) = placeholder_iter.next() else {
+    //         commands.spawn((
+    //             Name::new("RoadPlaceholder 2"),
+    //
+    //             RoadPlaceholder,
+    //             biarc_last_edge,
+    //         ));
+
+    //         return;
+    //     };
+
+    //     commands
+    //         .entity(entity)
+    //         .insert(GlobalTransform::from(midpoint));
+    //     *placeholder_last_edge = biarc_last_edge;
+
+    //     return;
+    // }
+
+    // Case: ground
     let Some((_, hitpoint)) = raycast_ground.cursor_ray() else {
         return;
     };
 
     let mut placeholder_iter = query_placeholders.iter_mut();
-    let Some((_, transform, mut edge)) = placeholder_iter.next() else {
+    let Some((_, mut edge)) = placeholder_iter.next() else {
         return;
     };
 
-    *edge = RoadEdge::from_start_end(Transform::from(*transform), hitpoint, edge.lanes());
+    *edge = RoadEdge::from_start_end(edge.start(), hitpoint, edge.lanes());
 
-    if let Some((entity, _, _)) = placeholder_iter.next() {
+    if let Some((entity, _)) = placeholder_iter.next() {
         commands.entity(entity).despawn_recursive();
     }
 }
 
-fn finalize_road(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+fn finalize_road(mut commands: Commands, query: Query<(Entity, &RoadEdge), With<RoadPlaceholder>>) {
+    let (_, edge) = query.iter().last().unwrap();
 
-    query: Query<(Entity, &RoadEdge), With<RoadPlaceholder>>,
-) {
-    let (entity, edge) = query.iter().last().unwrap();
-    for lane in 0..edge.lanes() {
-        let end = edge.get_end_transform(Some(lane));
-
-        const NODE_END_HALF_WIDTH: f32 = 0.20;
-        let cuboid = Cuboid {
-            half_size: Vec3::splat(NODE_END_HALF_WIDTH),
-        };
-
-        let id = commands
-            .spawn((
-                cuboid.mesh().compute_aabb().unwrap(),
-                PbrBundle {
-                    material: materials.add(Color::rgb(1.0, 1.0, 0.0)),
-                    mesh: meshes.add(cuboid),
-                    transform: end,
-                    ..default()
-                },
-                Name::new(format!("Road Endpoint lane {}", lane)),
-                RoadSpawner,
-            ))
-            .id();
-
-        commands.entity(id).set_parent_in_place(entity);
-    }
-
-    for (entity, edge) in query.iter() {
+    for (entity, _) in query.iter() {
         commands.entity(entity).remove::<RoadPlaceholder>();
-        commands.entity(entity).insert(edge.aabb());
     }
 
     commands.spawn((
         Name::new("RoadPlaceholder"),
-        PbrBundle {
-            transform: edge.end(),
-            ..default()
-        },
-        RoadPlaceholder,
         RoadEdge::from_start_end(edge.end(), Vec3::ZERO, edge.lanes()),
+        RoadPlaceholder,
     ));
 }
 
@@ -190,7 +183,6 @@ fn snip_road(
         let angle_second_half = hit_edge.angle() - angle_first_half;
 
         hit_edge.resize(angle_first_half);
-        commands.entity(entity).insert(hit_edge.aabb());
 
         let second_half = RoadEdge::new(
             hit_edge.end(),
@@ -202,14 +194,6 @@ fn snip_road(
             hit_edge.lanes(),
         );
 
-        commands.spawn((
-            Name::new("RoadEdge"),
-            PbrBundle {
-                transform: second_half.start(),
-                ..default()
-            },
-            second_half.aabb(),
-            second_half,
-        ));
+        commands.spawn((Name::new("RoadEdge"), second_half));
     }
 }

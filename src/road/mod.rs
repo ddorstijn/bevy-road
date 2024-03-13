@@ -1,11 +1,16 @@
 use bevy::prelude::*;
 
-use self::{edge::RoadEdge, shader::RoadShaderPlugin, world::RoadGridPlugin};
+use crate::states::GameState;
+
+use self::{
+    edge::RoadEdge,
+    placeholder::{BuildSystemSet, RoadPlaceholder},
+    world::{RoadGridPlugin, WorldSystemSet, WorldTile},
+};
 
 pub mod biarc;
 pub mod edge;
 pub mod placeholder;
-pub mod shader;
 pub mod world;
 
 pub const ROAD_WIDTH: f32 = 0.25;
@@ -14,9 +19,20 @@ pub struct RoadPlugin;
 impl Plugin for RoadPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<RoadEdge>()
-            .add_plugins(placeholder::PlaceholderPlugin)
-            .add_plugins(RoadShaderPlugin)
-            .add_plugins(RoadGridPlugin);
+            .register_type::<WorldTile>()
+            .add_plugins((RoadGridPlugin, placeholder::PlaceholderPlugin))
+            .configure_sets(
+                Update,
+                (
+                    BuildSystemSet::NotBuilding.run_if(not(any_with_component::<RoadPlaceholder>)),
+                    BuildSystemSet::Building.run_if(any_with_component::<RoadPlaceholder>),
+                    WorldSystemSet,
+                )
+                    .chain()
+                    .run_if(in_state(GameState::Building)),
+            )
+            .configure_sets(OnEnter(GameState::Building), BuildSystemSet::EnterBuildMode)
+            .configure_sets(OnExit(GameState::Building), BuildSystemSet::ExitBuildMode);
     }
 }
 

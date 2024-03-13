@@ -1,6 +1,6 @@
 use std::f32::consts::{PI, TAU};
 
-use bevy::{math::Vec3A, prelude::*, render::primitives::Aabb};
+use bevy::{math::bounding::Aabb3d, prelude::*};
 
 use super::ROAD_WIDTH;
 
@@ -181,7 +181,7 @@ impl RoadEdge {
         rotated
     }
 
-    pub fn aabb(&self) -> Aabb {
+    pub fn aabb3(&self) -> Aabb3d {
         let half_width = self.lanes as f32 * ROAD_WIDTH;
 
         let s = self.start.translation.xz();
@@ -195,10 +195,7 @@ impl RoadEdge {
             let extend_x = c.x - min_x + half_width;
             let extend_z = c.y - min_z + half_width;
 
-            return Aabb {
-                center: self.center.into(),
-                half_extents: Vec3A::new(extend_x, 0.1, extend_z),
-            };
+            return Aabb3d::new(self.center.into(), Vec3::new(extend_x, 0.1, extend_z));
         }
 
         let c_min_x = c.x - self.radius - half_width;
@@ -251,7 +248,10 @@ impl RoadEdge {
             s.y.min(e.y) - half_width
         };
 
-        Aabb::from_min_max(Vec3::new(min_x, -0.1, min_z), Vec3::new(max_x, 0.1, max_z))
+        Aabb3d {
+            min: Vec3::new(min_x, -0.1, min_z),
+            max: Vec3::new(max_x, 0.1, max_z),
+        }
     }
 
     pub fn check_hit(&self, hitpoint: Vec3) -> bool {
