@@ -96,14 +96,12 @@ fn move_road_placeholder(
         let hit_transform = edge.interpolate(edge.coord_to_length(hitpoint));
 
         let mut placeholder_iter = placeholders.iter_mut();
-        let (entity, first_edge_placeholder) = placeholder_iter.next().unwrap();
+        let (_, mut first_edge_placeholder) = placeholder_iter.next().unwrap();
         let (biarc_first_edge, biarc_last_edge) = biarc::compute_biarc(
             first_edge_placeholder.start(),
             hit_transform,
             first_edge_placeholder.lanes(),
         );
-
-        commands.entity(entity).insert(biarc_first_edge);
 
         let Some((_, mut placeholder_last_edge)) = placeholder_iter.next() else {
             commands.spawn((
@@ -115,6 +113,7 @@ fn move_road_placeholder(
             return;
         };
 
+        *first_edge_placeholder = biarc_first_edge;
         *placeholder_last_edge = biarc_last_edge;
 
         return;

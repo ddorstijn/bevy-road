@@ -258,14 +258,18 @@ impl RoadEdge {
         match self.twist {
             Twist::Straight => true,
             _ => {
-                let length = (hitpoint - self.center).length();
-                let road_thickness = self.lanes as f32 * ROAD_WIDTH * 0.5;
-
-                if length < self.radius.abs() - road_thickness {
+                if self.coord_to_angle(hitpoint) > self.coord_to_angle(self.end.translation) {
                     return false;
                 }
 
-                if length > self.radius.abs() + road_thickness {
+                let radius = (hitpoint - self.center).length();
+                let road_thickness = self.lanes as f32 * ROAD_WIDTH * 0.5;
+
+                if radius < self.radius.abs() - road_thickness {
+                    return false;
+                }
+
+                if radius > self.radius.abs() + road_thickness {
                     return false;
                 }
 
