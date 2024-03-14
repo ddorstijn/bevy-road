@@ -56,7 +56,7 @@ fn start_building(
 
     commands.spawn((
         Name::new("RoadPlaceholder"),
-        RoadEdge::from_start_end(Transform::from(*start), hitpoint, 1),
+        RoadEdge::from_start_end(Transform::from(*start), hitpoint, 3),
         RoadPlaceholder,
     ));
 }

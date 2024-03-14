@@ -82,18 +82,19 @@ impl From<&RoadEdge> for Curve {
     }
 }
 
-// This struct defines the data that will be passed to your shader
 #[derive(Asset, AsBindGroup, TypePath, Debug, Clone)]
 struct WorldMaterial {
+    #[texture(0)]
+    #[sampler(1)]
+    color_texture: Option<Handle<Image>>,
+
     #[storage(2, read_only)]
     pub curves: Vec<Curve>,
 }
 
-/// The Material trait is very configurable, but comes with sensible defaults for all methods.
-/// You only need to implement functions for features that need non-default behavior. See the Material api docs for details!
 impl Material for WorldMaterial {
     fn fragment_shader() -> ShaderRef {
-        "shaders/curves.wgsl".into()
+        "shaders/world.wgsl".into()
     }
 }
 
@@ -102,6 +103,7 @@ fn init_world(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<WorldMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     let grid_resolution = (settings.world_size / settings.grid_size).ceil().as_uvec2();
 
@@ -126,7 +128,10 @@ fn init_world(
                 MaterialMeshBundle::<WorldMaterial> {
                     transform,
                     mesh: meshes.add(mesh),
-                    material: materials.add(WorldMaterial { curves: Vec::new() }),
+                    material: materials.add(WorldMaterial {
+                        color_texture: Some(asset_server.load("textures/road.png")),
+                        curves: Vec::new(),
+                    }),
                     ..default()
                 },
                 WorldTile::default(),
@@ -212,7 +217,7 @@ fn update_material(
                 Curve::from(
                     edges
                         .get(*entity)
-                        .expect("World Tile has entity that is not roadedge"),
+                        .expect("World Tile has entity that is not a road edge"),
                 )
             })
             .collect();
