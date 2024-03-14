@@ -42,6 +42,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     var col = vec4(0.05, 0.4, 0.15, 1.0);
 
     var min_distance = 99999.9;
+    var min_length = 0.0;
     for (var i = u32(0); i < arrayLength(&curves); i++) {
         // Issue with 0 length dynamic storage buffer causes array to be length 1 with all zeroes when array length should be 0.
         // This creates the issue where every pixel is 0 (because mutliplied by rotation which is 0), causing everything to fall in the field
@@ -61,10 +62,17 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
             bool(curves[i].radius)
         );
 
+        let length = select(
+            dot(normalize(curves[i].angle), pos),
+            (atan2(pos.y, pos.x) - 1.570796) * curves[i].radius,
+            bool(curves[i].radius)
+        );
+
+        min_length = select(min_length, length, min_distance > distance);
         min_distance = min(min_distance, distance);
     }
 
-    let texel = textureSample(road_texture, road_sampler, vec2(-min_distance, 0.0));
+    let texel = textureSample(road_texture, road_sampler, vec2(-min_distance, fract(min_length)));
     col = mix(col, texel, step(min_distance, 0.0));
 
     return col;
