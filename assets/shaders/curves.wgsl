@@ -11,10 +11,12 @@ struct Curve {
     center: vec2<f32>,
     angle: vec2<f32>,
     radius: f32,
-    thickness: f32
+    lanes: u32
 }
 
 @group(2) @binding(2) var<storage> curves: array<Curve>;
+
+const ROAD_WIDTH: f32 = 1.0;
 
 fn sd_arc(p_in: vec2<f32>, sc: vec2<f32>, ra: f32, rb: f32) -> f32 {
     var p = p_in;
@@ -47,10 +49,12 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         let rotation = mat2x2(curves[i].rotation.y, -curves[i].rotation.x, curves[i].rotation.x, curves[i].rotation.y);
         let pos = (in.world_position.xz - curves[i].center) * rotation;
 
+        let thickness = f32(curves[i].lanes) * (ROAD_WIDTH / 2.0);
+
         // Radius is set to 0 for straight lines 
         let distance = select(
-            sd_segment(pos, curves[i].center, curves[i].angle, curves[i].thickness),
-            sd_arc(pos, curves[i].angle, curves[i].radius, curves[i].thickness),
+            sd_segment(pos, curves[i].center, curves[i].angle, thickness),
+            sd_arc(pos, curves[i].angle, curves[i].radius, thickness),
             bool(curves[i].radius)
         );
         col += mix(vec4(0.0), vec4(1.0), step(distance, 0.0));

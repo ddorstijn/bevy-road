@@ -13,7 +13,7 @@ pub mod edge;
 pub mod placeholder;
 pub mod world;
 
-pub const ROAD_WIDTH: f32 = 0.25;
+pub const ROAD_WIDTH: f32 = 1.0;
 
 pub struct RoadPlugin;
 impl Plugin for RoadPlugin {

@@ -93,7 +93,13 @@ fn move_road_placeholder(
             continue;
         }
 
-        let hit_transform = edge.interpolate(edge.coord_to_length(hitpoint));
+        let outer = edge.radius().powi(2) < (hitpoint - edge.center()).length_squared();
+        let lane = match outer {
+            true => -1,
+            false => edge.lanes() as i32,
+        };
+
+        let hit_transform = edge.interpolate_lane(edge.coord_to_length(hitpoint), lane);
 
         let mut placeholder_iter = placeholders.iter_mut();
         let (_, mut first_edge_placeholder) = placeholder_iter.next().unwrap();

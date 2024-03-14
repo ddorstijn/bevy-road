@@ -8,10 +8,7 @@ use bevy::{
     utils::HashSet,
 };
 
-use super::{
-    edge::{RoadEdge, Twist},
-    ROAD_WIDTH,
-};
+use super::edge::{RoadEdge, Twist};
 
 pub struct RoadGridPlugin;
 impl Plugin for RoadGridPlugin {
@@ -57,7 +54,7 @@ struct Curve {
     center: Vec2,
     angle: Vec2,
     radius: f32,
-    thickness: f32,
+    lanes: u32,
 }
 
 impl From<&RoadEdge> for Curve {
@@ -69,14 +66,14 @@ impl From<&RoadEdge> for Curve {
                 center: edge.start().translation.xz(),
                 angle: edge.end().translation.xz() - edge.start().translation.xz(),
                 radius: 0.0,
-                thickness: edge.lanes() as f32 * ROAD_WIDTH,
+                lanes: edge.lanes() as u32,
             },
             _ => Self {
                 rotation: edge.rotation(),
                 center: edge.center().xz(),
                 angle: Vec2::new((edge.angle() * 0.5).sin(), (edge.angle() * 0.5).cos()),
                 radius: edge.radius(),
-                thickness: edge.lanes() as f32 * ROAD_WIDTH,
+                lanes: edge.lanes() as u32,
             },
         }
     }

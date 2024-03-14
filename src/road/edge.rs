@@ -181,8 +181,45 @@ impl RoadEdge {
         rotated
     }
 
+    pub fn interpolate_lane(&self, length: f32, lane: i32) -> Transform {
+        let min = (self.lanes - 1) as f32 * 0.5 * ROAD_WIDTH;
+        let offset = min + lane as f32 * ROAD_WIDTH;
+
+        match self.twist {
+            Twist::Straight => {
+                let offset = self.start.left() * offset;
+
+                let mut interp = self.start.clone();
+                interp.translation += self.start.forward() * length + offset;
+
+                interp
+            }
+            Twist::Clockwise => {
+                let offset = self.start.left() * offset;
+                let rotation = Quat::from_axis_angle(Vec3::Y, length / self.radius);
+
+                let mut interp = self.start.clone();
+                interp.translation += offset;
+                interp.rotate_around(self.center, rotation);
+
+                interp
+            }
+            Twist::CounterClockwise => {
+                let offset = self.start.right() * offset;
+                let rotation = Quat::from_axis_angle(Vec3::Y, -length / self.radius);
+
+                let mut interp = self.start.clone();
+                interp.translation += offset;
+                interp.rotate_around(self.center, rotation);
+
+                interp
+            }
+        }
+    }
+
+    #[rustfmt::skip]
     pub fn aabb3(&self) -> Aabb3d {
-        let half_width = self.lanes as f32 * ROAD_WIDTH;
+        let half_width = self.lanes as f32 * ROAD_WIDTH * 0.5;
 
         let s = self.start.translation.xz();
         let e = self.end.translation.xz();
@@ -227,26 +264,10 @@ impl RoadEdge {
             Twist::Straight => panic!("Straight lines don't have angles"),
         }
 
-        let max_x = if q0 {
-            c_max_x
-        } else {
-            s.x.max(e.x) + half_width
-        };
-        let max_z = if q1 {
-            c_max_z
-        } else {
-            s.y.max(e.y) + half_width
-        };
-        let min_x = if q2 {
-            c_min_x
-        } else {
-            s.x.min(e.x) - half_width
-        };
-        let min_z = if q3 {
-            c_min_z
-        } else {
-            s.y.min(e.y) - half_width
-        };
+        let max_x = if q0 { c_max_x } else { s.x.max(e.x) + half_width };
+        let max_z = if q1 { c_max_z } else { s.y.max(e.y) + half_width };
+        let min_x = if q2 { c_min_x } else { s.x.min(e.x) - half_width };
+        let min_z = if q3 { c_min_z } else { s.y.min(e.y) - half_width };
 
         Aabb3d {
             min: Vec3::new(min_x, -0.1, min_z),
