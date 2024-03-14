@@ -5,10 +5,8 @@ use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-use crate::raycast::Raycast;
 use crate::road::edge::RoadEdge;
 use crate::road::placeholder::RoadPlaceholder;
-use crate::road::world::WorldTile;
 
 pub struct DebugPlugin;
 impl Plugin for DebugPlugin {
