@@ -136,8 +136,6 @@ fn move_road_placeholder(
 fn finalize_road(mut commands: Commands, query: Query<(Entity, &RoadEdge), With<RoadPlaceholder>>) {
     let (_, edge) = query.iter().last().unwrap();
 
-    println!("{:?}", edge.twist());
-
     for (entity, _) in query.iter() {
         commands.entity(entity).remove::<RoadPlaceholder>();
         commands.entity(entity).insert(Name::new("Road Edge"));
@@ -173,34 +171,36 @@ fn show_nodes(mut query: Query<&mut Visibility, With<RoadSpawner>>) {
 }
 
 fn snip_road(
-    raycast_edges: Raycast<With<RoadEdge>>,
+    world_cast: Raycast<With<WorldTile>>,
+    world_tiles: Query<&WorldTile>,
     mut edges: Query<&mut RoadEdge>,
     mut commands: Commands,
 ) {
-    for (entity, hitpoint) in raycast_edges.cursor_ray_intersections().into_iter() {
-        // Filter to hit roadedge if applicable
-        let Ok(mut hit_edge) = edges.get_mut(entity) else {
-            continue;
-        };
+    let Some((tile_entity, hitpoint)) = world_cast.cursor_ray() else {
+        return;
+    };
 
-        if !hit_edge.check_hit(hitpoint) {
+    for edge_entity in &world_tiles.get(tile_entity).unwrap().edges {
+        let mut edge = edges.get_mut(*edge_entity).unwrap();
+
+        if !edge.check_hit(hitpoint) {
             continue;
         }
 
-        let end = hit_edge.end();
-        let length_first_half = hit_edge.coord_to_length(hitpoint);
-        let length_second_half = hit_edge.length() - length_first_half;
+        let end = edge.end();
+        let length_first_half = edge.coord_to_length(hitpoint);
+        let length_second_half = edge.length() - length_first_half;
 
-        hit_edge.resize(length_first_half);
+        edge.resize(length_first_half);
 
         let second_half = RoadEdge::new(
-            hit_edge.end(),
+            edge.end(),
             end,
-            hit_edge.center(),
-            hit_edge.radius(),
+            edge.center(),
+            edge.radius(),
             length_second_half,
-            hit_edge.twist(),
-            hit_edge.lanes(),
+            edge.twist(),
+            edge.lanes(),
         );
 
         commands.spawn((Name::new("RoadEdge"), second_half));

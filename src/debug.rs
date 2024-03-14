@@ -30,25 +30,16 @@ fn setup_gizmos(mut config_store: ResMut<GizmoConfigStore>) {
     my_config.depth_bias = -1.0;
 }
 
-fn debug_edges(
-    edge_query: Query<(&GlobalTransform, &RoadEdge), With<RoadPlaceholder>>,
-    mut gizmos: Gizmos<DebugGizmos>,
-) {
-    for (transform, edge) in edge_query.iter() {
-        // gizmos.line(transform.translation(), transform.translation() + transform.right(), Color::WHITE);
-        gizmos.line(
-            transform.translation(),
-            transform.translation() + transform.forward(),
+fn debug_edges(edges: Query<&RoadEdge, With<RoadPlaceholder>>, mut gizmos: Gizmos<DebugGizmos>) {
+    for edge in &edges {
+        gizmos.ray(
+            edge.start().translation,
+            *edge.start().forward(),
             Color::BLACK,
         );
 
-        let center = transform.translation() + transform.left() * edge.radius();
-
-        let rot = Quat::from_axis_angle(Vec3::Y, 0.25 * PI);
-        let mut point = transform.translation() - center;
-
-        gizmos.sphere(center, Quat::IDENTITY, 0.1, Color::BLUE);
-        gizmos.sphere(center, Quat::IDENTITY, edge.radius(), Color::BLUE);
+        gizmos.sphere(edge.center(), Quat::IDENTITY, 0.1, Color::BLUE);
+        gizmos.sphere(edge.center(), Quat::IDENTITY, edge.radius(), Color::BLUE);
 
         gizmos.line(
             edge.start().translation,
@@ -62,27 +53,29 @@ fn debug_edges(
             Color::PINK,
         );
 
+        let rot = Quat::from_axis_angle(Vec3::Y, 0.25 * PI);
+        let mut point = edge.start().translation;
         point = rot.mul_vec3(point);
 
-        gizmos.ray(center, point, Color::GREEN);
+        gizmos.ray(edge.center(), point, Color::GREEN);
 
         point = rot.mul_vec3(point);
-        gizmos.ray(center, point, Color::LIME_GREEN);
+        gizmos.ray(edge.center(), point, Color::LIME_GREEN);
 
         point = rot.mul_vec3(point);
-        gizmos.ray(center, point, Color::YELLOW);
+        gizmos.ray(edge.center(), point, Color::YELLOW);
 
         point = rot.mul_vec3(point);
-        gizmos.ray(center, point, Color::ORANGE);
+        gizmos.ray(edge.center(), point, Color::ORANGE);
 
         point = rot.mul_vec3(point);
-        gizmos.ray(center, point, Color::RED);
+        gizmos.ray(edge.center(), point, Color::RED);
 
         point = rot.mul_vec3(point);
-        gizmos.ray(center, point, Color::PURPLE);
+        gizmos.ray(edge.center(), point, Color::PURPLE);
 
         point = rot.mul_vec3(point);
-        gizmos.ray(center, point, Color::BLUE);
+        gizmos.ray(edge.center(), point, Color::BLUE);
     }
 }
 
