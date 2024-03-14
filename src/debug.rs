@@ -1,11 +1,14 @@
 use std::f32::consts::PI;
 
+use bevy::math::bounding::BoundingVolume;
 use bevy::prelude::*;
 use bevy::render::primitives::Aabb;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
+use crate::raycast::Raycast;
 use crate::road::edge::RoadEdge;
 use crate::road::placeholder::RoadPlaceholder;
+use crate::road::world::WorldTile;
 
 pub struct DebugPlugin;
 impl Plugin for DebugPlugin {
@@ -15,7 +18,7 @@ impl Plugin for DebugPlugin {
             .add_systems(Startup, setup_gizmos)
             .add_systems(Update, debug_edges)
             .add_systems(Update, draw_axis)
-            .add_systems(Update, debug_aabb)
+            .add_systems(Update, (debug_aabb, debug_edges_aabb))
             .add_systems(Update, debug_road_ends);
     }
 }
@@ -47,14 +50,7 @@ fn debug_edges(
         let mut point = transform.translation() - center;
 
         gizmos.sphere(center, Quat::IDENTITY, 0.1, Color::BLUE);
-        // gizmos.sphere(center, Quat::IDENTITY, edge.radius(), Color::BLUE);
-        gizmos.arc_3d(
-            edge.angle(),
-            edge.radius(),
-            edge.center(),
-            Quat::from_rotation_y(edge.rotation().to_angle()),
-            Color::NAVY,
-        );
+        gizmos.sphere(center, Quat::IDENTITY, edge.radius(), Color::BLUE);
 
         gizmos.line(
             edge.start().translation,
@@ -96,6 +92,16 @@ fn debug_aabb(aabbs: Query<&Aabb>, mut gizmos: Gizmos) {
     for aabb in aabbs.iter() {
         let transform = Transform::from_translation(aabb.center.into())
             .with_scale(2.0 * Vec3::from(aabb.half_extents));
+        gizmos.cuboid(transform, Color::GREEN);
+    }
+}
+
+fn debug_edges_aabb(edges: Query<&RoadEdge>, mut gizmos: Gizmos) {
+    for edge in &edges {
+        let aabb = edge.aabb3();
+        let transform = Transform::from_translation(aabb.center().into())
+            .with_scale(2.0 * Vec3::from(aabb.half_size()));
+
         gizmos.cuboid(transform, Color::GREEN);
     }
 }

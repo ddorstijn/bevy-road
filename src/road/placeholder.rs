@@ -136,6 +136,8 @@ fn move_road_placeholder(
 fn finalize_road(mut commands: Commands, query: Query<(Entity, &RoadEdge), With<RoadPlaceholder>>) {
     let (_, edge) = query.iter().last().unwrap();
 
+    println!("{:?}", edge.twist());
+
     for (entity, _) in query.iter() {
         commands.entity(entity).remove::<RoadPlaceholder>();
         commands.entity(entity).insert(Name::new("Road Edge"));
@@ -186,17 +188,17 @@ fn snip_road(
         }
 
         let end = hit_edge.end();
-        let angle_first_half = hit_edge.coord_to_angle(hitpoint);
-        let angle_second_half = hit_edge.angle() - angle_first_half;
+        let length_first_half = hit_edge.coord_to_length(hitpoint);
+        let length_second_half = hit_edge.length() - length_first_half;
 
-        hit_edge.resize(angle_first_half);
+        hit_edge.resize(length_first_half);
 
         let second_half = RoadEdge::new(
             hit_edge.end(),
             end,
             hit_edge.center(),
             hit_edge.radius(),
-            angle_second_half,
+            length_second_half,
             hit_edge.twist(),
             hit_edge.lanes(),
         );

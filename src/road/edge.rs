@@ -19,7 +19,7 @@ pub struct RoadEdge {
     end: Transform,
     center: Vec3,
     radius: f32,
-    angle: f32,
+    length: f32,
     twist: Twist,
     lanes: u8,
 }
@@ -30,7 +30,7 @@ impl RoadEdge {
         end: Transform,
         center: Vec3,
         radius: f32,
-        angle: f32,
+        length: f32,
         twist: Twist,
         lanes: u8,
     ) -> Self {
@@ -38,7 +38,7 @@ impl RoadEdge {
             start,
             end,
             center,
-            angle,
+            length,
             radius,
             twist,
             lanes,
@@ -54,16 +54,16 @@ impl RoadEdge {
 
         let scalar = chord.dot(normal);
         // Straight line
-        if scalar.abs() < f32::EPSILON * 100.0 {
+        if scalar.abs() < f32::EPSILON * 1000.0 {
             let center = start.translation + (end - start.translation) / 2.0;
             let end = Transform::from_translation(end).looking_to(start.forward().into(), Vec3::Y);
-            let radius = (endpoint - startpoint).length();
+            let length = (endpoint - startpoint).length();
             return Self {
                 start,
                 end,
                 center,
-                radius,
-                angle: 0.0,
+                radius: 0.0,
+                length,
                 twist: Twist::Straight,
                 lanes,
             };
@@ -81,16 +81,16 @@ impl RoadEdge {
             false => Twist::CounterClockwise,
         };
 
-        let angle = match twist {
-            Twist::CounterClockwise => c_start.angle_between(c_end).rem_euclid(TAU),
-            Twist::Clockwise => (-c_start.angle_between(c_end)).rem_euclid(TAU),
-            Twist::Straight => panic!("Straight roads shouldn't calculate angles"),
+        let length = match twist {
+            Twist::CounterClockwise => c_start.angle_between(c_end).rem_euclid(TAU) * radius,
+            Twist::Clockwise => (-c_start.angle_between(c_end)).rem_euclid(TAU) * radius,
+            Twist::Straight => unreachable!(),
         };
 
         let end_direction = match twist {
             Twist::CounterClockwise => c_end.perp().extend(0.0).xzy(),
             Twist::Clockwise => -c_end.perp().extend(0.0).xzy(),
-            Twist::Straight => panic!("Straight roads shouldn't calculate angles"),
+            Twist::Straight => unreachable!(),
         };
 
         let center = center.extend(0.0).xzy();
@@ -101,7 +101,7 @@ impl RoadEdge {
             end,
             center,
             radius,
-            angle,
+            length,
             twist,
             lanes,
         }
@@ -136,16 +136,9 @@ impl RoadEdge {
         }
     }
 
-    pub fn length(&self) -> f32 {
-        match self.twist {
-            Twist::Straight => self.radius,
-            _ => self.radius * self.angle,
-        }
-    }
-
-    pub fn resize(&mut self, angle: f32) {
-        let new_end = self.interpolate(self.radius * angle);
-        self.angle = angle;
+    pub fn resize(&mut self, length: f32) {
+        let new_end = self.interpolate(length);
+        self.length = length;
         self.end = new_end;
     }
 
@@ -161,7 +154,12 @@ impl RoadEdge {
     }
 
     pub fn coord_to_length(&self, coord: Vec3) -> f32 {
-        self.radius * self.coord_to_angle(coord)
+        match self.twist {
+            Twist::Straight => coord
+                .project_onto(self.end.translation - self.start.translation)
+                .length(),
+            _ => self.radius * self.coord_to_angle(coord),
+        }
     }
 
     pub fn interpolate(&self, length: f32) -> Transform {
@@ -276,21 +274,30 @@ impl RoadEdge {
     }
 
     pub fn check_hit(&self, hitpoint: Vec3) -> bool {
+        let road_thickness = self.lanes as f32 * ROAD_WIDTH * 0.5;
+
         match self.twist {
-            Twist::Straight => true,
+            Twist::Straight => {
+                let line = (self.end.translation - self.start.translation).normalize();
+
+                let projection_length = hitpoint.dot(line);
+                if projection_length < 0.0 || projection_length > self.length {
+                    return false;
+                }
+
+                let closest_point_on_line = projection_length * line;
+                let vector_to_line = closest_point_on_line - hitpoint;
+                let distance = vector_to_line.length();
+
+                distance <= road_thickness
+            }
             _ => {
-                if self.coord_to_angle(hitpoint) > self.coord_to_angle(self.end.translation) {
+                if self.coord_to_length(hitpoint) > self.length {
                     return false;
                 }
 
                 let radius = (hitpoint - self.center).length();
-                let road_thickness = self.lanes as f32 * ROAD_WIDTH * 0.5;
-
-                if radius < self.radius.abs() - road_thickness {
-                    return false;
-                }
-
-                if radius > self.radius.abs() + road_thickness {
+                if radius < self.radius - road_thickness || radius > self.radius + road_thickness {
                     return false;
                 }
 
@@ -320,8 +327,8 @@ impl RoadEdge {
         self.lanes
     }
 
-    pub fn angle(&self) -> f32 {
-        self.angle
+    pub fn length(&self) -> f32 {
+        self.length
     }
 
     pub fn twist(&self) -> Twist {

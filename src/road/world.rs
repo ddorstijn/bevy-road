@@ -71,7 +71,10 @@ impl From<&RoadEdge> for Curve {
             _ => Self {
                 rotation: edge.rotation(),
                 center: edge.center().xz(),
-                angle: Vec2::new((edge.angle() * 0.5).sin(), (edge.angle() * 0.5).cos()),
+                angle: Vec2::new(
+                    (edge.length() / edge.radius() * 0.5).sin(),
+                    (edge.length() / edge.radius() * 0.5).cos(),
+                ),
                 radius: edge.radius(),
                 lanes: edge.lanes() as u32,
             },
