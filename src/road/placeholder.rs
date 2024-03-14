@@ -5,7 +5,12 @@ use bevy::{
 
 use crate::{raycast::Raycast, states::GameState};
 
-use super::{biarc, edge::RoadEdge, world::WorldTile, RoadSpawner};
+use super::{
+    biarc,
+    edge::{RoadEdge, Twist},
+    world::WorldTile,
+    RoadSpawner,
+};
 
 pub struct PlaceholderPlugin;
 impl Plugin for PlaceholderPlugin {
@@ -93,10 +98,15 @@ fn move_road_placeholder(
             continue;
         }
 
-        let outer = edge.radius().powi(2) < (hitpoint - edge.center()).length_squared();
-        let lane = match outer {
-            true => -1,
-            false => edge.lanes() as i32,
+        let lane = match edge.twist() {
+            Twist::Straight => match edge.start().left().dot(hitpoint).is_sign_negative() {
+                true => edge.lanes() as i32,
+                false => -1,
+            },
+            _ => match edge.radius().powi(2) < (hitpoint - edge.center()).length_squared() {
+                true => edge.lanes() as i32,
+                false => -1,
+            },
         };
 
         let hit_transform = edge.interpolate_lane(edge.coord_to_length(hitpoint), lane);

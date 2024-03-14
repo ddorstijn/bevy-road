@@ -7,6 +7,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use crate::road::edge::RoadEdge;
 use crate::road::placeholder::RoadPlaceholder;
+use crate::road::ROAD_WIDTH;
 
 pub struct DebugPlugin;
 impl Plugin for DebugPlugin {
@@ -16,7 +17,7 @@ impl Plugin for DebugPlugin {
             .add_systems(Startup, setup_gizmos)
             .add_systems(Update, debug_edges)
             .add_systems(Update, draw_axis)
-            .add_systems(Update, (debug_aabb, debug_edges_aabb))
+            .add_systems(Update, (debug_aabb, debug_edges_aabb, debug_edges_lanes))
             .add_systems(Update, debug_road_ends);
     }
 }
@@ -76,6 +77,27 @@ fn debug_edges(edges: Query<&RoadEdge, With<RoadPlaceholder>>, mut gizmos: Gizmo
 
         point = rot.mul_vec3(point);
         gizmos.ray(edge.center(), point, Color::BLUE);
+    }
+}
+
+fn debug_edges_lanes(edges: Query<&RoadEdge>, mut gizmos: Gizmos) {
+    for edge in &edges {
+        // Draw min
+        let t = edge.get_end_transform(None);
+        let min = (edge.lanes() - 1) as f32 * 0.5 * ROAD_WIDTH;
+        gizmos.ray(t.translation, t.right() * min, Color::RED);
+
+        let base = t.translation + t.right() * (min - -1.0 * ROAD_WIDTH);
+        gizmos.ray(base, *t.forward(), Color::PURPLE);
+
+        let base = t.translation + t.right() * min;
+        gizmos.ray(base, *t.forward(), Color::WHITE);
+
+        let base = t.translation + t.right() * (min - 1.0 * ROAD_WIDTH);
+        gizmos.ray(base, *t.forward(), Color::WHITE);
+
+        let base = t.translation + t.right() * (min - edge.lanes() as f32 * ROAD_WIDTH);
+        gizmos.ray(base, *t.forward(), Color::BLUE);
     }
 }
 

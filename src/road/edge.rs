@@ -129,9 +129,13 @@ impl RoadEdge {
 
     pub fn get_end_transform(&self, lane: Option<u8>) -> Transform {
         match lane {
-            Some(l) => self
-                .end
-                .with_translation(self.end.translation + self.end.left() * ROAD_WIDTH * l as f32),
+            Some(l) => {
+                let max = (self.lanes - 1) as f32 * 0.5 * ROAD_WIDTH;
+                let offset = max - l as f32 * ROAD_WIDTH;
+                let translation = self.end.translation + *self.end.left() * offset;
+
+                self.end.with_translation(translation)
+            }
             None => self.end,
         }
     }
@@ -180,8 +184,8 @@ impl RoadEdge {
     }
 
     pub fn interpolate_lane(&self, length: f32, lane: i32) -> Transform {
-        let min = (self.lanes - 1) as f32 * 0.5 * ROAD_WIDTH;
-        let offset = min + lane as f32 * ROAD_WIDTH;
+        let max = (self.lanes - 1) as f32 * 0.5 * ROAD_WIDTH;
+        let offset = max - lane as f32 * ROAD_WIDTH;
 
         match self.twist {
             Twist::Straight => {
