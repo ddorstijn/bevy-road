@@ -7,10 +7,12 @@ struct VertexOutput {
 }
 
 struct Curve {
-    rotation: vec2<f32>,
+    twist: u32,
     center: vec2<f32>,
-    angle: vec2<f32>,
+    start: vec2<f32>,
+    end: vec2<f32>,
     radius: f32,
+    length: f32,
     lanes: u32
 }
 
@@ -19,15 +21,23 @@ struct Curve {
 @group(2) @binding(2) var<storage> curves: array<Curve>;
 
 const ROAD_WIDTH: f32 = 1.0;
+const TAU: f32 = 6.28318530718;
 
-fn sd_arc(p_in: vec2<f32>, sc: vec2<f32>, ra: f32, rb: f32) -> f32 {
-    var p = p_in;
-    p.x = abs(p.x);
-    return select(
-        abs(length(p) - ra),
-        length(p - sc * ra),
-        sc.y * p.x > sc.x * p.y
-    ) - rb;
+fn cross2d(a: vec2<f32>, b: vec2<f32>) -> f32 {
+    return a.y * b.x - a.x * b.y;
+}
+
+fn rem_euclid(lhs: f32, rhs: f32) -> f32 {
+    let r = lhs % rhs;
+    return select(r, r + rhs, r < 0.0);
+}
+
+fn angle_between(lhs: vec2<f32>, rhs: vec2<f32>) -> f32 {
+    return acos(dot(lhs, rhs) / (length(lhs) * length(rhs))) * sign(cross2d(lhs, rhs));
+}
+
+fn sd_donut(p: vec2<f32>, ra: f32, th: f32) -> f32 {
+    return abs(length(p) - ra) - th;
 }
 
 fn sd_segment(p: vec2<f32>, a: vec2<f32>, b: vec2<f32>, th: f32) -> f32 {
@@ -44,29 +54,28 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     var min_distance = 99999.9;
     var min_length = 0.0;
     for (var i = u32(0); i < arrayLength(&curves); i++) {
-        // Issue with 0 length dynamic storage buffer causes array to be length 1 with all zeroes when array length should be 0.
-        // This creates the issue where every pixel is 0 (because mutliplied by rotation which is 0), causing everything to fall in the field
-        if curves[i].rotation.y + curves[i].rotation.x == 0.0 {
+        let pos = (in.world_position.xz - curves[i].center);
+        let thickness = f32(curves[i].lanes) * (ROAD_WIDTH / 2.0);
+
+        let length = select(
+            dot(normalize(curves[i].end - curves[i].start), pos),
+            rem_euclid(select(1.0, -1.0, curves[i].twist == 0u) * angle_between(curves[i].start, pos), TAU) * curves[i].radius,
+            curves[i].twist != 2u
+        );
+
+        if length > curves[i].length {
             continue;
         }
 
-        let rotation = mat2x2(curves[i].rotation.y, -curves[i].rotation.x, curves[i].rotation.x, curves[i].rotation.y);
-        let pos = (in.world_position.xz - curves[i].center) * rotation;
-
-        let thickness = f32(curves[i].lanes) * (ROAD_WIDTH / 2.0);
-
-        // Radius is set to 0 for straight lines 
         let distance = select(
-            sd_segment(pos, curves[i].center, curves[i].angle, thickness),
-            sd_arc(pos, curves[i].angle, curves[i].radius, thickness),
-            bool(curves[i].radius)
+            sd_segment(pos, curves[i].start, curves[i].end, thickness),
+            sd_donut(pos, curves[i].radius, thickness),
+            curves[i].twist != 2u
         );
 
-        let length = select(
-            dot(normalize(curves[i].angle), pos),
-            (atan2(pos.y, pos.x) - 1.570796) * curves[i].radius,
-            bool(curves[i].radius)
-        );
+        if distance > 0.0 {
+            continue;
+        }
 
         min_length = select(min_length, length, min_distance > distance);
         min_distance = min(min_distance, distance);

@@ -15,7 +15,8 @@ pub mod states;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins((CameraPlugin, DebugPlugin, GameStatePlugin, RoadPlugin))
+        .add_plugins((CameraPlugin, GameStatePlugin, RoadPlugin))
+        // .add_plugins(DebugPlugin)
         .add_systems(Startup, setup_scene)
         .run();
 }

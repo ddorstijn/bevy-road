@@ -50,32 +50,47 @@ pub struct WorldTile {
 
 #[derive(ShaderType, Debug, Clone)]
 struct Curve {
-    rotation: Vec2,
+    twist: u32,
     center: Vec2,
-    angle: Vec2,
+    start: Vec2,
+    end: Vec2,
     radius: f32,
+    length: f32,
     lanes: u32,
 }
 
 impl From<&RoadEdge> for Curve {
     fn from(edge: &RoadEdge) -> Self {
+        let rel_start = edge.start().translation.xz() - edge.center().xz();
+        let rel_end = edge.end().translation.xz() - edge.center().xz();
+
         // Use center and angle as start and end point for straight lines
         match edge.twist() {
-            Twist::Straight => Self {
-                rotation: Vec2::new(0.0, 1.0),
-                center: edge.start().translation.xz(),
-                angle: edge.end().translation.xz() - edge.start().translation.xz(),
-                radius: 0.0,
+            Twist::Clockwise => Self {
+                twist: 1,
+                center: edge.center().xz(),
+                start: rel_start,
+                end: rel_end,
+                radius: edge.radius(),
+                length: edge.length(),
                 lanes: edge.lanes() as u32,
             },
-            _ => Self {
-                rotation: edge.rotation(),
+            Twist::CounterClockwise => Self {
+                twist: 0,
                 center: edge.center().xz(),
-                angle: Vec2::new(
-                    (edge.length() / edge.radius() * 0.5).sin(),
-                    (edge.length() / edge.radius() * 0.5).cos(),
-                ),
+                start: rel_start,
+                end: rel_end,
                 radius: edge.radius(),
+                length: edge.length(),
+                lanes: edge.lanes() as u32,
+            },
+            Twist::Straight => Self {
+                twist: 2,
+                center: edge.center().xz(),
+                start: rel_start,
+                end: rel_end,
+                radius: 0.0,
+                length: edge.length(),
                 lanes: edge.lanes() as u32,
             },
         }
@@ -221,7 +236,7 @@ fn update_material(
                 )
             })
             .collect();
-
+        println!("{:?}", mat.curves);
         tile.dirty = false;
     }
 }
