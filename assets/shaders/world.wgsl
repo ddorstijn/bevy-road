@@ -40,11 +40,8 @@ fn sd_donut(p: vec2<f32>, ra: f32, th: f32) -> f32 {
     return abs(length(p) - ra) - th;
 }
 
-fn sd_segment(p: vec2<f32>, a: vec2<f32>, b: vec2<f32>, th: f32) -> f32 {
-    let pa = p - a;
-    let ba = b - a;
-    let h = clamp(dot(pa, ba) / dot(ba, ba), 0., 1.);
-    return length(pa - ba * h) - th;
+fn sd_line(p: vec2<f32>, l: vec2<f32>, th: f32) -> f32 {
+    return abs(dot(vec2(-l.y, l.x), p)) - th;
 }
 
 @fragment
@@ -58,24 +55,21 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         let thickness = f32(curves[i].lanes) * (ROAD_WIDTH / 2.0);
 
         let length = select(
-            dot(normalize(curves[i].end - curves[i].start), pos),
+            dot(normalize(curves[i].end), pos - curves[i].start),
             rem_euclid(select(1.0, -1.0, curves[i].twist == 0u) * angle_between(curves[i].start, pos), TAU) * curves[i].radius,
             curves[i].twist != 2u
         );
 
-        if length > curves[i].length {
-            continue;
-        }
-
-        let distance = select(
-            sd_segment(pos, curves[i].start, curves[i].end, thickness),
-            sd_donut(pos, curves[i].radius, thickness),
-            curves[i].twist != 2u
+        var distance = select(
+            select(
+                sd_line(pos, normalize(curves[i].end), thickness),
+                sd_donut(pos, curves[i].radius, thickness),
+                curves[i].twist != 2u
+            ),
+            min(distance(pos, curves[i].start), distance(pos, curves[i].end)) - thickness,
+            length < 0.0 || length > curves[i].length
         );
 
-        if distance > 0.0 {
-            continue;
-        }
 
         min_length = select(min_length, length, min_distance > distance);
         min_distance = min(min_distance, distance);

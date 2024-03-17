@@ -236,7 +236,7 @@ fn update_material(
                 )
             })
             .collect();
-        println!("{:?}", mat.curves);
+
         tile.dirty = false;
     }
 }

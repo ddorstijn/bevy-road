@@ -75,6 +75,7 @@ fn move_road_placeholder(
     edges: Query<&RoadEdge, Without<RoadPlaceholder>>,
     mut placeholders: Query<(Entity, &mut RoadEdge), With<RoadPlaceholder>>,
     mut commands: Commands,
+    input: Res<ButtonInput<KeyCode>>,
 ) {
     let Some((tile_entity, hitpoint)) = world_cast.cursor_ray() else {
         return;
@@ -136,6 +137,21 @@ fn move_road_placeholder(
     }
 
     // No edge
+
+    let shift = input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
+    let hitpoint = match shift {
+        true => {
+            edge.start().forward()
+                * -edge
+                    .start()
+                    .compute_matrix()
+                    .inverse()
+                    .transform_point(hitpoint)
+                    .z
+        }
+        false => hitpoint,
+    };
+
     *edge = RoadEdge::from_start_end(edge.start(), hitpoint, edge.lanes());
 
     if let Some((entity, _)) = placeholder_iter.next() {
