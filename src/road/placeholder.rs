@@ -61,7 +61,7 @@ fn start_building(
 
     commands.spawn((
         Name::new("RoadPlaceholder"),
-        RoadEdge::from_start_end(Transform::from(*start), hitpoint, 2),
+        RoadEdge::from_start_end(Transform::from(*start), hitpoint, 4),
         RoadPlaceholder,
     ));
 }
@@ -95,7 +95,7 @@ fn move_road_placeholder(
         .collect::<Vec<&RoadEdge>>();
 
     for edge in possible_edges {
-        if !edge.check_hit(hitpoint) {
+        if !edge.intersects_point(hitpoint) {
             continue;
         }
 
@@ -141,15 +141,11 @@ fn move_road_placeholder(
     let shift = input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
     let hitpoint = match shift {
         true => {
-            edge.start().forward()
-                * -edge
-                    .start()
-                    .compute_matrix()
-                    .inverse()
-                    .transform_point(hitpoint)
-                    .z
+            edge.start().translation
+                + *edge.start().forward()
+                    * (hitpoint - edge.start().translation).dot(*edge.start().forward())
         }
-        false => hitpoint,
+        false => (hitpoint * 4.0).floor() * 0.25,
     };
 
     *edge = RoadEdge::from_start_end(edge.start(), hitpoint, edge.lanes());
@@ -209,7 +205,7 @@ fn snip_road(
     for edge_entity in &world_tiles.get(tile_entity).unwrap().edges {
         let mut edge = edges.get_mut(*edge_entity).unwrap();
 
-        if !edge.check_hit(hitpoint) {
+        if !edge.intersects_point(hitpoint) {
             continue;
         }
 
@@ -227,6 +223,7 @@ fn snip_road(
             length_second_half,
             edge.twist(),
             edge.lanes(),
+            edge.aabb3(),
         );
 
         commands.spawn((Name::new("RoadEdge"), second_half));

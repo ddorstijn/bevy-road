@@ -1,6 +1,9 @@
 use std::f32::consts::{PI, TAU};
 
-use bevy::{math::bounding::Aabb3d, prelude::*};
+use bevy::{
+    math::bounding::{Aabb3d, IntersectsVolume},
+    prelude::*,
+};
 
 use super::ROAD_WIDTH;
 
@@ -12,8 +15,7 @@ pub enum Twist {
     Straight,
 }
 
-#[derive(Component, Debug, Default, Reflect)]
-#[reflect(Component, Default)]
+#[derive(Component, Debug)]
 pub struct RoadEdge {
     start: Transform,
     end: Transform,
@@ -22,6 +24,7 @@ pub struct RoadEdge {
     length: f32,
     twist: Twist,
     lanes: u8,
+    aabb3: Aabb3d,
 }
 
 impl RoadEdge {
@@ -33,6 +36,7 @@ impl RoadEdge {
         length: f32,
         twist: Twist,
         lanes: u8,
+        aabb3: Aabb3d,
     ) -> Self {
         Self {
             start,
@@ -42,6 +46,7 @@ impl RoadEdge {
             radius,
             twist,
             lanes,
+            aabb3,
         }
     }
 
@@ -58,6 +63,16 @@ impl RoadEdge {
             let center = start.translation + (end - start.translation) / 2.0;
             let end = Transform::from_translation(end).looking_to(start.forward().into(), Vec3::Y);
             let length = (endpoint - startpoint).length();
+
+            let aabb3 = compute_aabb3(
+                startpoint,
+                endpoint,
+                center.xz(),
+                0.0,
+                Twist::Straight,
+                lanes,
+            );
+
             return Self {
                 start,
                 end,
@@ -66,6 +81,7 @@ impl RoadEdge {
                 length,
                 twist: Twist::Straight,
                 lanes,
+                aabb3,
             };
         }
 
@@ -93,6 +109,7 @@ impl RoadEdge {
             Twist::Straight => unreachable!(),
         };
 
+        let aabb3 = compute_aabb3(startpoint, endpoint, center, radius, twist, lanes);
         let center = center.extend(0.0).xzy();
         let end = Transform::from_translation(end).looking_to(end_direction, Vec3::Y);
 
@@ -104,26 +121,7 @@ impl RoadEdge {
             length,
             twist,
             lanes,
-        }
-    }
-
-    pub fn rotation(&self) -> Vec2 {
-        match self.twist {
-            Twist::Straight => self.start.forward().xz(),
-            _ => {
-                let midpoint = (self.start.translation + self.end.translation) * 0.5;
-                let c_midpoint = midpoint - self.center;
-                if c_midpoint.length_squared() < f32::EPSILON {
-                    return self.start.forward().xz();
-                }
-
-                let c_end = self.end.translation - self.center;
-
-                let inverse = c_end.dot(self.start.forward().into()).signum();
-                // Center to midpoint on chord. Which is also the center of the circle. Normalized, this gives sine cosine of angle.
-                // If c_end is pointing opposite of the tangent the center of the circle is opposite
-                (c_midpoint * inverse).xz().normalize()
-            }
+            aabb3,
         }
     }
 
@@ -219,65 +217,7 @@ impl RoadEdge {
         }
     }
 
-    #[rustfmt::skip]
-    pub fn aabb3(&self) -> Aabb3d {
-        let half_width = self.lanes as f32 * ROAD_WIDTH * 0.5;
-
-        let s = self.start.translation.xz();
-        let e = self.end.translation.xz();
-        let c = self.center.xz();
-
-        if Twist::Straight == self.twist {
-            let min_x = s.x.min(e.x);
-            let min_z = s.y.min(e.y);
-
-            let extend_x = c.x - min_x + half_width;
-            let extend_z = c.y - min_z + half_width;
-
-            return Aabb3d::new(self.center.into(), Vec3::new(extend_x, 0.1, extend_z));
-        }
-
-        let c_min_x = c.x - self.radius - half_width;
-        let c_max_x = c.x + self.radius + half_width;
-        let c_min_z = c.y - self.radius - half_width;
-        let c_max_z = c.y + self.radius + half_width;
-
-        let s_angle = (s - c).to_angle().rem_euclid(TAU);
-        let e_angle = (e - c).to_angle().rem_euclid(TAU);
-
-        let q0: bool;
-        let q1: bool;
-        let q2: bool;
-        let q3: bool;
-
-        match self.twist {
-            Twist::CounterClockwise => {
-                q0 = s_angle >= e_angle;
-                q1 = (s_angle - 0.5 * PI).rem_euclid(TAU) >= (e_angle - 0.5 * PI).rem_euclid(TAU);
-                q2 = (s_angle - PI).rem_euclid(TAU) >= (e_angle - PI).rem_euclid(TAU);
-                q3 = (s_angle - 1.5 * PI).rem_euclid(TAU) >= (e_angle - 1.5 * PI).rem_euclid(TAU);
-            }
-            Twist::Clockwise => {
-                q0 = s_angle <= e_angle;
-                q1 = (s_angle - 0.5 * PI).rem_euclid(TAU) <= (e_angle - 0.5 * PI).rem_euclid(TAU);
-                q2 = (s_angle - PI).rem_euclid(TAU) <= (e_angle - PI).rem_euclid(TAU);
-                q3 = (s_angle - 1.5 * PI).rem_euclid(TAU) <= (e_angle - 1.5 * PI).rem_euclid(TAU);
-            }
-            Twist::Straight => panic!("Straight lines don't have angles"),
-        }
-
-        let max_x = if q0 { c_max_x } else { s.x.max(e.x) + half_width };
-        let max_z = if q1 { c_max_z } else { s.y.max(e.y) + half_width };
-        let min_x = if q2 { c_min_x } else { s.x.min(e.x) - half_width };
-        let min_z = if q3 { c_min_z } else { s.y.min(e.y) - half_width };
-
-        Aabb3d {
-            min: Vec3::new(min_x, -0.1, min_z),
-            max: Vec3::new(max_x, 0.1, max_z),
-        }
-    }
-
-    pub fn check_hit(&self, hitpoint: Vec3) -> bool {
+    pub fn intersects_point(&self, hitpoint: Vec3) -> bool {
         let road_thickness = self.lanes as f32 * ROAD_WIDTH * 0.5;
 
         match self.twist {
@@ -310,6 +250,50 @@ impl RoadEdge {
         }
     }
 
+    pub fn intersects_edge(&self, other: &RoadEdge) -> bool {
+        if !self.aabb3.intersects(&other.aabb3()) {
+            return false;
+        }
+
+        // Arc - Arc
+        if self.twist != Twist::Straight && other.twist() != Twist::Straight {
+            if let Some((i1, i2)) = circle_intersections(
+                self.center.xz(),
+                self.radius,
+                other.center().xz(),
+                other.radius(),
+            ) {
+                if self.intersects_point(i1.extend(0.0).xzy())
+                    && other.intersects_point(i1.extend(0.0).xzy())
+                {
+                    return true;
+                }
+
+                if self.intersects_point(i2.extend(0.0).xzy())
+                    && other.intersects_point(i2.extend(0.0).xzy())
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Arc - Straight
+        if self.twist == Twist::Straight && other.twist() != Twist::Straight
+            || self.twist != Twist::Straight && other.twist() == Twist::Straight
+        {
+            return true;
+        }
+
+        // Straight - Straight
+        if self.twist == Twist::Straight && other.twist() == Twist::Straight {
+            return true;
+        }
+
+        true
+    }
+
     // Properties
     pub fn start(&self) -> Transform {
         self.start
@@ -338,4 +322,99 @@ impl RoadEdge {
     pub fn twist(&self) -> Twist {
         self.twist
     }
+
+    pub fn aabb3(&self) -> Aabb3d {
+        self.aabb3
+    }
+}
+
+#[rustfmt::skip]
+fn compute_aabb3(start: Vec2, end: Vec2, center: Vec2, radius: f32, twist: Twist, lanes: u8) -> Aabb3d {
+    let half_width = lanes as f32 * ROAD_WIDTH * 0.5;
+
+    if Twist::Straight == twist {
+        let min_x = start.x.min(end.x);
+        let min_z = start.y.min(end.y);
+
+        let extend_x = center.x - min_x + half_width;
+        let extend_z = center.y - min_z + half_width;
+
+        return Aabb3d::new(center.extend(0.0).xzy(), Vec3::new(extend_x, 0.1, extend_z));
+    }
+
+    let c_min_x = center.x - radius - half_width;
+    let c_max_x = center.x + radius + half_width;
+    let c_min_z = center.y - radius - half_width;
+    let c_max_z = center.y + radius + half_width;
+
+    let s_angle = (start - center).to_angle().rem_euclid(TAU);
+    let e_angle = (end - center).to_angle().rem_euclid(TAU);
+
+    let q0: bool;
+    let q1: bool;
+    let q2: bool;
+    let q3: bool;
+
+    match twist {
+        Twist::CounterClockwise => {
+            q0 = s_angle >= e_angle;
+            q1 = (s_angle - 0.5 * PI).rem_euclid(TAU) >= (e_angle - 0.5 * PI).rem_euclid(TAU);
+            q2 = (s_angle - PI).rem_euclid(TAU) >= (e_angle - PI).rem_euclid(TAU);
+            q3 = (s_angle - 1.5 * PI).rem_euclid(TAU) >= (e_angle - 1.5 * PI).rem_euclid(TAU);
+        }
+        Twist::Clockwise => {
+            q0 = s_angle <= e_angle;
+            q1 = (s_angle - 0.5 * PI).rem_euclid(TAU) <= (e_angle - 0.5 * PI).rem_euclid(TAU);
+            q2 = (s_angle - PI).rem_euclid(TAU) <= (e_angle - PI).rem_euclid(TAU);
+            q3 = (s_angle - 1.5 * PI).rem_euclid(TAU) <= (e_angle - 1.5 * PI).rem_euclid(TAU);
+        }
+        Twist::Straight => panic!("Straight lines don't have angles"),
+    }
+
+    let max_x = if q0 { c_max_x } else { start.x.max(end.x) + half_width };
+    let max_z = if q1 { c_max_z } else { start.y.max(end.y) + half_width };
+    let min_x = if q2 { c_min_x } else { start.x.min(end.x) - half_width };
+    let min_z = if q3 { c_min_z } else { start.y.min(end.y) - half_width };
+
+    Aabb3d {
+        min: Vec3::new(min_x, -0.1, min_z),
+        max: Vec3::new(max_x, 0.1, max_z),
+    }
+}
+
+fn circle_intersections(
+    c1_center: Vec2,
+    c1_radius: f32,
+    c2_center: Vec2,
+    c2_radius: f32,
+) -> Option<(Vec2, Vec2)> {
+    let dir = c2_center - c1_center;
+    let dist = dir.length();
+
+    if dist > c1_radius + c2_radius {
+        // No solutions, the circles are separate
+        return None;
+    }
+
+    if dist < (c1_radius - c2_radius).abs() {
+        // No solutions because one circle is contained within the other
+        return None;
+    }
+
+    if dist == 0.0 && c1_radius == c2_radius {
+        // Circles are coincident and there are an infinite number of solutions
+        return None;
+    }
+
+    let dir_n = dir / dist;
+
+    let center_chord = (c1_radius.powi(2) - c2_radius.powi(2) + dist.powi(2)) / (2.0 * dist);
+    let half_length = (c1_radius.powi(2) - center_chord.powi(2)).sqrt();
+    let mid = c1_center + center_chord * dir_n;
+
+    let half_chord = half_length * dir_n.perp();
+    let s1 = mid - half_chord;
+    let s2 = mid + half_chord;
+
+    Some((s1, s2))
 }

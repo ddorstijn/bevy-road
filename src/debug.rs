@@ -48,12 +48,6 @@ fn debug_edges(edges: Query<&RoadEdge, With<RoadPlaceholder>>, mut gizmos: Gizmo
             Color::YELLOW,
         );
 
-        gizmos.ray(
-            edge.center(),
-            edge.rotation().extend(0.0).xzy(),
-            Color::PINK,
-        );
-
         let rot = Quat::from_axis_angle(Vec3::Y, 0.25 * PI);
         let mut point = edge.start().translation;
         point = rot.mul_vec3(point);
