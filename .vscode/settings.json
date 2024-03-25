@@ -51,4 +51,5 @@
     "wgsl-analyzer.diagnostics.nagaValidationErrors": true,
     "wgsl-analyzer.inlayHints.structLayoutHints": true,
     "wgsl-analyzer.diagnostics.nagaParsingErrors": true,
+    "debug.allowBreakpointsEverywhere": true,
 }
