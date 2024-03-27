@@ -1,12 +1,11 @@
 use crate::lane::road_mark::rule::Rule;
 use serde::{Deserialize, Serialize};
-use uom::si::f64::Length;
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct ExplicitLine {
     /// Length of the visible line
     #[serde(rename = "@length")]
-    pub length: Length,
+    pub length: f32,
     /// Rule that must be observed when passing the line from inside, that is, from the lane with
     /// the lower absolute ID to the lane with the higher absolute ID
     #[serde(rename = "@rule")]
@@ -14,12 +13,12 @@ pub struct ExplicitLine {
     /// Offset of start position of the `<line>` element, relative to the @sOffset  given in the
     /// `<roadMark>` element
     #[serde(rename = "@sOffset")]
-    pub s_offset: Length,
+    pub s_offset: f32,
     /// Lateral offset from the lane border. If `<sway>` element is present, the lateral offset
     /// follows the sway.
     #[serde(rename = "@tOffset")]
-    pub t_offset: Length,
+    pub t_offset: f32,
     /// Line width. This attribute supersedes the definition in the `<roadMark>` element.
     #[serde(rename = "@width")]
-    pub width: Option<Length>,
+    pub width: Option<f32>,
 }

@@ -7,18 +7,18 @@ use serde::{Deserialize, Serialize};
 pub struct Sway {
     /// Polynom parameter a, sway value at @s (ds=0)
     #[serde(rename = "@a")]
-    a: f64,
+    a: f32,
     /// Polynom parameter b
     #[serde(rename = "@b")]
-    b: f64,
+    b: f32,
     /// Polynom parameter c
     #[serde(rename = "@c")]
-    c: f64,
+    c: f32,
     /// Polynom parameter d
     #[serde(rename = "@d")]
-    d: f64,
+    d: f32,
     /// s-coordinate of start position of the `<sway>` element, relative to the @sOffset given in
     /// the `<roadMark>` element
     #[serde(rename = "@d_s")]
-    d_s: f64,
+    d_s: f32,
 }

@@ -1,6 +1,5 @@
 use crate::lane::road_mark::explicit_line::ExplicitLine;
 use serde::{Deserialize, Serialize};
-use vec1::Vec1;
 
 /// Irregular road markings that cannot be described by repetitive line patterns may be described by
 /// individual road marking elements. These explicit definitions also contain `<line>` elements for
@@ -11,5 +10,5 @@ use vec1::Vec1;
 // The `<explicit>` element should specifically be used for measurement data.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Explicit {
-    pub line: Vec1<ExplicitLine>,
+    pub line: Vec<ExplicitLine>,
 }

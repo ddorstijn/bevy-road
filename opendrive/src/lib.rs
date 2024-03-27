@@ -1,22 +1,21 @@
-use serde::{Deserialize, Deserializer};
-use uom::si::{curvature::radian_per_meter, f64::Curvature};
+use core::OpenDrive;
+use std::path::Path;
+
+use bevy::transform::components::Transform;
+use quick_xml::DeError;
 
 pub mod core;
 pub mod junction;
 pub mod lane;
 pub mod road;
 
-pub fn curvature_from_scientific<'de, D>(deserializer: D) -> Result<Curvature, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    use serde::de::Error;
+pub(crate) mod util;
 
-    String::deserialize(deserializer).and_then(|string| {
-        let float = string
-            .parse::<f64>()
-            .map_err(|err| Error::custom(err.to_string()))?;
+pub trait Interpolatable {
+    fn interpolate(&self, s: f32) -> Transform;
+}
 
-        Ok(Curvature::new::<radian_per_meter>(float))
-    })
+pub fn load_opendrive<P: AsRef<Path>>(path: P) -> Result<OpenDrive, DeError> {
+    let xml = std::fs::read_to_string(path).map_err(|error| DeError::Custom(error.to_string()))?;
+    quick_xml::de::from_str::<OpenDrive>(&xml)
 }

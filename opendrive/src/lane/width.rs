@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use uom::si::f64::Length;
 
 /// The width of a lane is defined along the t-coordinate. The width of a lane may change within a
 /// lane section.
@@ -11,18 +10,18 @@ use uom::si::f64::Length;
 pub struct Width {
     /// Polynom parameter a, width at @s (ds=0)
     #[serde(rename = "@a")]
-    pub a: f64,
+    pub a: f32,
     /// Polynom parameter b
     #[serde(rename = "@b")]
-    pub b: f64,
+    pub b: f32,
     /// Polynom parameter c
     #[serde(rename = "@c")]
-    pub c: f64,
+    pub c: f32,
     /// Polynom parameter d
     #[serde(rename = "@d")]
-    pub d: f64,
+    pub d: f32,
     /// s-coordinate of start position of the `<width>` element, relative to the position of the
     /// preceding `<laneSection>` element
     #[serde(rename = "@sOffset")]
-    pub s_offset: Length,
+    pub s_offset: f32,
 }

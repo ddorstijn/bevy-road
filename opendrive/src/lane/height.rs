@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use uom::si::f64::Length;
 
 /// Lane height shall be defined along the h-coordinate. Lane height may be used to elevate a lane
 /// independent from the road elevation. Lane height is used to implement small-scale elevation such
@@ -9,12 +8,12 @@ use uom::si::f64::Length;
 pub struct Height {
     /// Inner offset from road level
     #[serde(rename = "@inner")]
-    pub inner: Length,
+    pub inner: f32,
     /// Outer offset from road level
     #[serde(rename = "@outer")]
-    pub outer: Length,
+    pub outer: f32,
     /// s-coordinate of start position, relative to the position of the preceding `<laneSection>`
     /// element
     #[serde(rename = "@sOffset")]
-    pub s_offset: Length,
+    pub s_offset: f32,
 }

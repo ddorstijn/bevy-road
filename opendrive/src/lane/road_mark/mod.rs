@@ -5,7 +5,6 @@ use r#type::Type;
 use serde::{Deserialize, Serialize};
 use sway::Sway;
 use type_simplified::TypeSimplified;
-use uom::si::f64::Length;
 
 pub mod color;
 pub mod explicit;
@@ -30,7 +29,7 @@ pub struct RoadMark {
     pub color: color::Color,
     /// Height of road mark above the road, i.e. thickness of the road mark
     #[serde(rename = "@height")]
-    pub height: Option<Length>,
+    pub height: Option<f32>,
     /// Allows a lane change in the indicated direction, taking into account that lanes are numbered
     /// in ascending order from right to left. If the attribute is missing, “both” is used as
     /// default.
@@ -43,7 +42,7 @@ pub struct RoadMark {
     /// s-coordinate of start position of the `<roadMark>` element, relative to the position of the
     /// preceding `<laneSection>` element
     #[serde(rename = "@sOffset")]
-    pub s_offset: Length,
+    pub s_offset: f32,
     /// Type of the road mark
     #[serde(rename = "@type")]
     pub type_simplified: TypeSimplified,
@@ -53,5 +52,5 @@ pub struct RoadMark {
     /// Width of the road mark. This attribute is optional if detailed definition is given by
     /// <line> element.
     #[serde(rename = "@width")]
-    pub width: Option<Length>,
+    pub width: Option<f32>,
 }

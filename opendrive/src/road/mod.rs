@@ -1,14 +1,14 @@
-use crate::lane::lanes::Lanes;
+use crate::{lane::lanes::Lanes, Interpolatable};
 // use crate::object::objects::Objects;
 use crate::road::profile::ElevationProfile;
 use crate::road::road_type::RoadType;
+use bevy::transform::components::Transform;
 // use crate::signal::signals::Signals;
 use geometry::plan_view::PlanView;
 use link::Link;
 use profile::lateral_profile::LateralProfile;
 use rule::Rule;
 use serde::{Deserialize, Serialize};
-use uom::si::f64::Length;
 
 pub mod element_type;
 pub mod geometry;
@@ -45,7 +45,7 @@ pub struct Road {
     /// considered.
     /// Only positive values are valid.
     #[serde(rename = "@length")]
-    pub length: Length,
+    pub length: f32,
     /// Name of the road. May be chosen freely.
     #[serde(rename = "@name")]
     pub name: Option<String>,
@@ -63,4 +63,23 @@ pub struct Road {
     pub lanes: Lanes,
     // pub objects: Option<Objects>,
     // pub signals: Option<Signals>,
+}
+
+impl Interpolatable for Road {
+    fn interpolate(&self, s: f32) -> Transform {
+        let geom = match self.plan_view.geometry.len() == 1 {
+            true => self.plan_view.geometry.first().unwrap(),
+            false => match self
+                .plan_view
+                .geometry
+                .windows(2)
+                .find(|w| w[0].s <= s && w[1].s > s)
+            {
+                Some(x) => x.first().unwrap(),
+                None => self.plan_view.geometry.last().unwrap(),
+            },
+        };
+
+        geom.interpolate(s)
+    }
 }

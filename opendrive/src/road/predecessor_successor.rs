@@ -3,7 +3,6 @@ use crate::junction::element_dir::ElementDir;
 use crate::road::element_type::ElementType;
 
 use serde::{Deserialize, Serialize};
-use uom::si::f64::Length;
 
 /// Successors and predecessors can be junctions or roads. For each, different attribute sets shall
 /// be used.
@@ -23,7 +22,7 @@ pub struct PredecessorSuccessor {
     /// predecessor, meaning not at the start or end of the predecessor. Shall only be used for
     /// elementType "road"
     #[serde(rename = "@elementS")]
-    pub element_s: Option<Length>,
+    pub element_s: Option<f32>,
     /// Type of the linked element
     #[serde(rename = "@elementType")]
     pub element_type: Option<ElementType>,

@@ -1,7 +1,6 @@
 use crate::lane::access::restriction_type::AccessRestrictionType;
 use rule::AccessRule;
 use serde::{Deserialize, Serialize};
-use uom::si::f64::Length;
 
 pub mod restriction_type;
 pub mod rule;
@@ -21,5 +20,5 @@ pub struct Access {
     /// s-coordinate of start position, relative to the position of the preceding `<laneSection>`
     /// element
     #[serde(rename = "@sOffset")]
-    pub s_offset: Length,
+    pub s_offset: f32,
 }

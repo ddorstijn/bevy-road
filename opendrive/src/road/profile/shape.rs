@@ -7,20 +7,20 @@ use serde::{Deserialize, Serialize};
 pub struct Shape {
     /// Polynom parameter a, relative height at @t (dt=0)
     #[serde(rename = "@a")]
-    pub a: f64,
+    pub a: f32,
     /// Polynom parameter b
     #[serde(rename = "@b")]
-    pub b: f64,
+    pub b: f32,
     /// Polynom parameter c
     #[serde(rename = "@c")]
-    pub c: f64,
+    pub c: f32,
     /// Polynom parameter d
     #[serde(rename = "@d")]
-    pub d: f64,
+    pub d: f32,
     /// s-coordinate of start position
     #[serde(rename = "@s")]
-    pub s: f64,
+    pub s: f32,
     /// t-coordinate of start position
     #[serde(rename = "@t")]
-    pub t: f64,
+    pub t: f32,
 }

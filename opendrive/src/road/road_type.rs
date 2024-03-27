@@ -2,8 +2,6 @@ use crate::road::road_type_e::RoadTypeE;
 use crate::road::speed::Speed;
 use serde::{Deserialize, Serialize};
 
-use uom::si::f64::Length;
-
 /// A road type element is valid for the entire cross section of a road. It is valid until a new
 /// road type element is provided or until the road ends.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -14,7 +12,7 @@ pub struct RoadType {
     pub country: Option<String>,
     /// s-coordinate of start position
     #[serde(rename = "@s")]
-    pub s: Length,
+    pub s: f32,
     /// Type of the road defined as enumeration
     #[serde(rename = "@type")]
     pub r#type: RoadTypeE,
