@@ -18,7 +18,7 @@ pub mod weight;
 
 /// Defines the style of the line at the outer border of a lane. The style of the center line that
 /// separates left and right lanes is determined by the road mark element for the center lane.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoadMark {
     #[serde(default)]
     pub sway: Vec<Sway>,
@@ -34,7 +34,8 @@ pub struct RoadMark {
     /// in ascending order from right to left. If the attribute is missing, “both” is used as
     /// default.
     #[serde(rename = "@laneChange")]
-    pub lane_change: Option<LaneChange>,
+    #[serde(default)]
+    pub lane_change: LaneChange,
     /// Material of the road mark. Identifiers to be defined by the user, use "standard" as default
     /// value.
     #[serde(rename = "@material")]

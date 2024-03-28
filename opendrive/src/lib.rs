@@ -1,7 +1,6 @@
 use core::OpenDrive;
 use std::path::Path;
 
-use bevy::transform::components::Transform;
 use quick_xml::DeError;
 
 pub mod core;
@@ -10,10 +9,6 @@ pub mod lane;
 pub mod road;
 
 pub(crate) mod util;
-
-pub trait Interpolatable {
-    fn interpolate(&self, s: f32) -> Transform;
-}
 
 pub fn load_opendrive<P: AsRef<Path>>(path: P) -> Result<OpenDrive, DeError> {
     let xml = std::fs::read_to_string(path).map_err(|error| DeError::Custom(error.to_string()))?;

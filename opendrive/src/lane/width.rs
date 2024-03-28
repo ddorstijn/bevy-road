@@ -1,10 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// The width of a lane is defined along the t-coordinate. The width of a lane may change within a
-/// lane section.
-/// Lane width and lane border elements are mutually exclusive within the same lane group. If both
-/// width and lane border elements are present for a lane section in the ASAM OpenDRIVE file, the
-/// application must use the information from the `<width>` elements.
+/// The width of a lane is defined along the t-coordinate. The width of a lane may change within a lane section.
 /// In ASAM OpenDRIVE, lane width is described by the `<width>` element within the `<lane>` element.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Width {

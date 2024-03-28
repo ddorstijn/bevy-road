@@ -9,4 +9,4 @@ edition = "2021"
 bevy = { version = "0.13", features = ["file_watcher"] }
 bevy-inspector-egui = "0.23"
 
-opendrive = { path = "../opendrive" }
+bevy_road-core = { path = "../bevy_road-core" }

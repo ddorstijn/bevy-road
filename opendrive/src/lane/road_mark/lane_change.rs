@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LaneChange {
     Increase,
     Decrease,
+    #[default]
     Both,
     None,
 }

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// The lane type is defined per lane. A lane type defines the main purpose of a lane and its
 /// corresponding traffic rules.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum LaneType {
     /// Describes a soft shoulder  at the edge of the roa
@@ -14,6 +14,7 @@ pub enum LaneType {
     /// Hard shoulder on motorways for emergency stop
     Stop,
     /// "Invisible" lane. This lane is on the most ouside of the road. Its only purpose is for simulation, that there is still opendrive present in case the (human) driver leaves the road.
+    #[default]
     None,
     /// Lane on which cars should not drive, but have the same height as the drivable lanes. Typically they are separated with lines and often there are additional striped lines on them.
     Restricted,

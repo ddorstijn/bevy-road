@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = ["opendrive", "viewer", "simulation", "building"]
+members = ["opendrive", "viewer", "simulation", "building", "bevy_road-core"]
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

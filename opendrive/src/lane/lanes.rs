@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 /// Contains a series of lane section elements that define the characteristics of the road cross
 /// sections with respect to the lanes along the reference line.
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Lanes {
     #[serde(default)]

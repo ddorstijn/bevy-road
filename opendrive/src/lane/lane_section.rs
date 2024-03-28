@@ -7,7 +7,7 @@ use crate::lane::right::Right;
 /// Lanes may be split into multiple lane sections. Each lane section contains a fixed number of
 /// lanes. Every time the number of lanes changes, a new lane section is required. The distance
 /// between two succeeding lane sections shall not be zero.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct LaneSection {
     /// s-coordinate of start position
     #[serde(rename = "@s")]

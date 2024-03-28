@@ -52,4 +52,7 @@
     "wgsl-analyzer.inlayHints.structLayoutHints": true,
     "wgsl-analyzer.diagnostics.nagaParsingErrors": true,
     "debug.allowBreakpointsEverywhere": true,
+    "rust-analyzer.cargo.extraEnv": {
+        "RUSTFLAGS": "--cfg test"
+    }
 }
