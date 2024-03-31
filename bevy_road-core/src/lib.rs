@@ -89,6 +89,8 @@ impl From<OpenDrive> for BevyRoad {
 
                 let lanes = BTreeMap::from_iter(
                     left_lanes.chain(center_lane).chain(right_lanes).map(|l| {
+                        let id = l.id;
+
                         let widths = BTreeMap::from_iter(l.width.iter().map(|w| {
                             (
                                 OrderedFloat::<f32>::from(w.s_offset),
@@ -105,10 +107,12 @@ impl From<OpenDrive> for BevyRoad {
                             r#type: l.r#type.clone(),
                             width: widths,
                             height: heights,
-                            predecessor: None,
-                            successor: None,
-                            left_neighbour: None,
-                            right_neighbour: None,
+                            predecessor: l.link.as_ref().and_then(|link| {
+                                link.predecessor.first().and_then(|prd| Some(prd.id))
+                            }),
+                            successor: l.link.as_ref().and_then(|link| {
+                                link.successor.first().and_then(|scr| Some(scr.id))
+                            }),
                         };
 
                         (id, lane)
@@ -125,6 +129,16 @@ impl From<OpenDrive> for BevyRoad {
                 offsets,
                 reference_line,
                 sections,
+                predecessor: r.link.as_ref().and_then(|link| {
+                    link.predecessor
+                        .as_ref()
+                        .and_then(|prd| Some(prd.element_id.parse().unwrap()))
+                }),
+                sucessor: r.link.as_ref().and_then(|link| {
+                    link.successor
+                        .as_ref()
+                        .and_then(|scr| Some(scr.element_id.parse().unwrap()))
+                }),
             };
 
             (id, road)

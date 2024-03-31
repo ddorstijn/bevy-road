@@ -10,6 +10,8 @@ pub struct Road {
     pub offsets: BTreeMap<OrderedFloat<f32>, Polynomal>,
     pub reference_line: BTreeMap<OrderedFloat<f32>, ReferenceLine>,
     pub sections: BTreeMap<OrderedFloat<f32>, LaneSection>,
+    pub predecessor: Option<u32>,
+    pub sucessor: Option<u32>,
 }
 
 // impl Interpolatable for Road {
