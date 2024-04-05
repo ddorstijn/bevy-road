@@ -61,7 +61,9 @@ fn move_car(
             transform.translation + *transform.forward() * 5.0,
             Color::YELLOW,
         );
-
-        car.s = (car.s + 5.0 * time.delta_seconds()) % *road.length;
     }
+
+    let max_length = road.iter().map(|r| r.0.length).max().unwrap();
+
+    car.s = (car.s + 5.0 * time.delta_seconds()) % *max_length;
 }
