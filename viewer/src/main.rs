@@ -1,6 +1,14 @@
 use std::f32::consts::PI;
 
-use bevy::prelude::*;
+use bevy::{
+    pbr::wireframe::{WireframeConfig, WireframePlugin},
+    prelude::*,
+    render::{
+        render_resource::WgpuFeatures,
+        settings::{RenderCreation, WgpuSettings},
+        RenderPlugin,
+    },
+};
 use camera::{CameraPlugin, PanOrbitCamera};
 use debug::DebugPlugin;
 use road::RoadPlugin;
@@ -13,7 +21,20 @@ pub(self) mod states;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins((
+            DefaultPlugins.set(RenderPlugin {
+                render_creation: RenderCreation::Automatic(WgpuSettings {
+                    features: WgpuFeatures::POLYGON_MODE_LINE,
+                    ..default()
+                }),
+                ..default()
+            }),
+            WireframePlugin,
+        ))
+        .insert_resource(WireframeConfig {
+            global: false,
+            ..default()
+        })
         .add_plugins((CameraPlugin, GameStatePlugin, RoadPlugin))
         .add_plugins(DebugPlugin)
         .add_systems(Startup, setup_world)

@@ -14,6 +14,6 @@ impl Polynomal {
     }
 
     pub fn eval(&self, s: f32) -> f32 {
-        self.a + self.b * s + self.c * s.pow(2) + self.d * s.pow(2)
+        self.a + self.b * s + self.c * s.pow(2) + self.d * s.pow(3)
     }
 }

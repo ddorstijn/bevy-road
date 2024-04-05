@@ -905,6 +905,7 @@ dependencies = [
 name = "bevy_road-core"
 version = "0.1.0"
 dependencies = [
+ "bevy",
  "opendrive",
  "ordered-float",
 ]
@@ -3702,6 +3703,7 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_road-core",
+ "ordered-float",
 ]
 
 [[package]]

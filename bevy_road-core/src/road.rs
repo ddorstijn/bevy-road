@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::{lane::LaneSection, reference_line::ReferenceLine, Polynomal};
 
+use bevy::transform::components::Transform;
 use ordered_float::OrderedFloat;
 
 #[derive(Debug)]
@@ -14,21 +15,60 @@ pub struct Road {
     pub sucessor: Option<u32>,
 }
 
-// impl Interpolatable for Road {
-//     fn interpolate(&self, s: f32) -> Transform {
-//         let geom = match self.plan_view.geometry.len() == 1 {
-//             true => self.plan_view.geometry.first().unwrap(),
-//             false => match self
-//                 .plan_view
-//                 .geometry
-//                 .windows(2)
-//                 .find(|w| w[0].s <= s && w[1].s > s)
-//             {
-//                 Some(x) => x.first().unwrap(),
-//                 None => self.plan_view.geometry.last().unwrap(),
-//             },
-//         };
+impl From<&opendrive::road::Road> for Road {
+    fn from(r: &opendrive::road::Road) -> Self {
+        let offsets = r
+            .lanes
+            .lane_offset
+            .iter()
+            .map(|o| {
+                (
+                    OrderedFloat::<f32>::from(o.s),
+                    Polynomal::new(o.a, o.b, o.c, o.d),
+                )
+            })
+            .collect();
 
-//         geom.interpolate(s)
-//     }
-// }
+        let reference_line = r
+            .plan_view
+            .geometry
+            .iter()
+            .map(|g| (OrderedFloat::<f32>::from(g.s), ReferenceLine::from(g)))
+            .collect();
+
+        let sections = r
+            .lanes
+            .lane_section
+            .iter()
+            .map(|ls| (OrderedFloat::<f32>::from(ls.s), LaneSection::from(ls)))
+            .collect();
+
+        Road {
+            length: r.length.into(),
+            offsets,
+            reference_line,
+            sections,
+            predecessor: r.link.as_ref().and_then(|link| {
+                link.predecessor
+                    .as_ref()
+                    .and_then(|prd| Some(prd.element_id.parse().unwrap()))
+            }),
+            sucessor: r.link.as_ref().and_then(|link| {
+                link.successor
+                    .as_ref()
+                    .and_then(|scr| Some(scr.element_id.parse().unwrap()))
+            }),
+        }
+    }
+}
+
+impl Road {
+    pub fn interpolate(&self, s: f32) -> Transform {
+        self.reference_line
+            .range(..=OrderedFloat::<f32>(s))
+            .next_back()
+            .unwrap()
+            .1
+            .interpolate(s)
+    }
+}
