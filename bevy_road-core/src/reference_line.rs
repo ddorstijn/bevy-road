@@ -61,7 +61,7 @@ impl From<&opendrive::road::geometry::Geometry> for ReferenceLine {
             hdg: g.hdg,
             length: g.length,
             x: g.x,
-            y: g.y,
+            y: -g.y,
             r#type,
         }
     }
@@ -73,9 +73,10 @@ impl ReferenceLine {
             GeometryType::Line => {
                 let (sin_hdg, cos_hdg) = self.hdg.sin_cos();
                 let x = (cos_hdg * (s - self.s)) + self.x;
-                let y = (sin_hdg * (s - self.s)) + self.y;
+                let y = (sin_hdg * (s - self.s)) - self.y;
 
-                Transform::from_xyz(x, 0.0, y).looking_to(Vec3::new(cos_hdg, 0.0, sin_hdg), Vec3::Y)
+                Transform::from_xyz(x, 0.0, -y)
+                    .looking_to(Vec3::new(cos_hdg, 0.0, -sin_hdg), Vec3::Y)
             }
             GeometryType::Spiral {
                 k_start: _,
@@ -92,24 +93,24 @@ impl ReferenceLine {
                 let x =
                     (c_hdg * (xs_spiral - x_offset)) - (s_hdg * (ys_spiral - y_offset)) + self.x;
                 let y =
-                    (s_hdg * (xs_spiral - x_offset)) + (c_hdg * (ys_spiral - y_offset)) + self.y;
+                    (s_hdg * (xs_spiral - x_offset)) + (c_hdg * (ys_spiral - y_offset)) - self.y;
 
                 let hdg = as_spiral + hdg;
 
-                Transform::from_xyz(x, 0.0, y)
-                    .looking_to(Vec3::new(hdg.cos(), 0.0, hdg.sin()), Vec3::Y)
+                Transform::from_xyz(x, 0.0, -y)
+                    .looking_to(Vec3::new(hdg.cos(), 0.0, -hdg.sin()), Vec3::Y)
             }
             GeometryType::Arc { curvature } => {
                 let angle_at_s = (s - self.s) * curvature - PI * 0.5;
                 let r = curvature.recip();
                 let (sin, cos) = (angle_at_s + self.hdg).sin_cos();
                 let x = r * (cos - self.hdg.sin()) + self.x;
-                let y = r * (sin + self.hdg.cos()) + self.y;
+                let y = r * (sin + self.hdg.cos()) - self.y;
 
                 let delta = PI * 0.5 - (s - self.s) * curvature - self.hdg;
 
-                Transform::from_xyz(x, 0.0, y)
-                    .looking_to(Vec3::new(delta.sin(), 0.0, delta.cos()), Vec3::Y)
+                Transform::from_xyz(x, 0.0, -y)
+                    .looking_to(Vec3::new(delta.sin(), 0.0, -delta.cos()), Vec3::Y)
             }
         }
     }

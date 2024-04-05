@@ -14,7 +14,7 @@ pub struct RoadComponent(pub bevy_road_core::road::Road);
 
 fn load_opendrive(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
     let project = load(
-        "C:\\Users\\danny\\Documents\\Projects\\Rust\\bevy_road\\opendrive\\tests\\data\\Ex_Slip_lane.xodr",
+        "C:\\Users\\danny\\Documents\\Projects\\Rust\\bevy_road\\opendrive\\tests\\data\\highway_example.xodr",
     );
 
     for (id, road) in project.roads {

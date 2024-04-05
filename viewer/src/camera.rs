@@ -35,6 +35,7 @@ fn pan_orbit_camera(
     windows: Query<&Window, With<PrimaryWindow>>,
     mut ev_motion: EventReader<MouseMotion>,
     mut ev_scroll: EventReader<MouseWheel>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     input_mouse: Res<ButtonInput<MouseButton>>,
     mut query: Query<(&mut PanOrbitCamera, &mut Transform, &Projection)>,
 ) {
@@ -60,6 +61,23 @@ fn pan_orbit_camera(
             pan += ev.delta;
         }
     }
+
+    if keyboard_input.pressed(KeyCode::KeyD) {
+        pan -= Vec2::X * 5.0;
+    }
+
+    if keyboard_input.pressed(KeyCode::KeyA) {
+        pan += Vec2::X * 5.0;
+    }
+
+    if keyboard_input.pressed(KeyCode::KeyW) {
+        pan += Vec2::Y * 5.0;
+    }
+
+    if keyboard_input.pressed(KeyCode::KeyS) {
+        pan -= Vec2::Y * 5.0;
+    }
+
     for ev in ev_scroll.read() {
         scroll += ev.y;
     }
