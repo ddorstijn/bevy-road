@@ -14,16 +14,18 @@ pub struct RoadComponent(pub bevy_road_core::road::Road);
 
 fn load_opendrive(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
     let project = load(
-        "C:\\Users\\danny\\Documents\\Projects\\Rust\\bevy_road\\opendrive\\tests\\data\\highway_example.xodr",
+        "C:\\Users\\danny\\Documents\\Projects\\Rust\\bevy_road\\opendrive\\tests\\data\\Ex_Slip_Lane.xodr",
     );
 
     for (id, road) in project.roads {
-        let positions: Vec<Vec3> = (0..)
-            .step_by(2)
-            .map(|s| (s as f32, road.interpolate(s as f32)))
-            .take_while(|(s, _)| s <= &road.length)
-            .flat_map(|(road_s, transform)| {
-                let road_s = OrderedFloat::<f32>::from(road_s);
+        let steps = road.length.ceil();
+        let step_size = road.length / steps;
+
+        let positions = (0..=steps as u32)
+            .flat_map(|step| {
+                let road_s = step_size * step as f32;
+                let transform = road.interpolate(road_s);
+
                 let (s_section, section) = road.sections.range(..=road_s).next_back().unwrap();
 
                 let left_point = section
@@ -53,7 +55,7 @@ fn load_opendrive(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
 
                 [left_point, right_point]
             })
-            .collect();
+            .collect::<Vec<_>>();
 
         let normals = (0..positions.len() as u32)
             .map(|_| Vec3::Y)

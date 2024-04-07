@@ -63,12 +63,12 @@ impl From<&opendrive::road::Road> for Road {
 }
 
 impl Road {
-    pub fn interpolate(&self, s: f32) -> Transform {
+    pub fn interpolate(&self, s: OrderedFloat<f32>) -> Transform {
         self.reference_line
-            .range(..=OrderedFloat::<f32>(s))
+            .range(..=s)
             .next_back()
             .unwrap()
             .1
-            .interpolate(s)
+            .interpolate(*s)
     }
 }

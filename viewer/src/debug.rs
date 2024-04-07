@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use ordered_float::OrderedFloat;
 
 use crate::road::RoadComponent;
 
@@ -32,7 +33,7 @@ fn draw_reference_line(roads: Query<&RoadComponent>, mut gizmos: Gizmos<DebugGiz
     for road in &roads {
         let positions = (0..)
             .step_by(5)
-            .map(|s| (s as f32, road.0.interpolate(s as f32)))
+            .map(|s| (s as f32, road.0.interpolate(OrderedFloat(s as f32))))
             .take_while(|(s, _)| s <= &road.0.length)
             .map(|(_, transform)| transform.translation)
             .collect::<Vec<_>>();
@@ -43,7 +44,7 @@ fn draw_reference_line(roads: Query<&RoadComponent>, mut gizmos: Gizmos<DebugGiz
 
 #[derive(Default)]
 struct Car {
-    s: f32,
+    s: OrderedFloat<f32>,
 }
 
 fn move_car(
