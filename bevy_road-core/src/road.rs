@@ -2,13 +2,14 @@ use std::collections::BTreeMap;
 
 use crate::{lane::LaneSection, reference_line::ReferenceLine, Polynomal};
 
-use bevy::transform::components::Transform;
+use bevy::{math::Vec3, transform::components::Transform};
 use ordered_float::OrderedFloat;
 
 #[derive(Debug)]
 pub struct Road {
     pub length: OrderedFloat<f32>,
-    pub offsets: BTreeMap<OrderedFloat<f32>, Polynomal>,
+    pub offset: BTreeMap<OrderedFloat<f32>, Polynomal>,
+    pub elevation: BTreeMap<OrderedFloat<f32>, Polynomal>,
     pub reference_line: BTreeMap<OrderedFloat<f32>, ReferenceLine>,
     pub sections: BTreeMap<OrderedFloat<f32>, LaneSection>,
     pub predecessor: Option<u32>,
@@ -17,7 +18,7 @@ pub struct Road {
 
 impl From<&opendrive::road::Road> for Road {
     fn from(r: &opendrive::road::Road) -> Self {
-        let offsets = r
+        let offset = r
             .lanes
             .lane_offset
             .iter()
@@ -28,6 +29,19 @@ impl From<&opendrive::road::Road> for Road {
                 )
             })
             .collect();
+
+        let elevation = r
+            .elevation_profile
+            .as_ref()
+            .and_then(|ep| {
+                Some(
+                    ep.elevation
+                        .iter()
+                        .map(|e| (OrderedFloat(e.s), Polynomal::new(e.a, e.b, e.c, e.d)))
+                        .collect(),
+                )
+            })
+            .unwrap_or_default();
 
         let reference_line = r
             .plan_view
@@ -45,7 +59,7 @@ impl From<&opendrive::road::Road> for Road {
 
         Road {
             length: r.length.into(),
-            offsets,
+            offset,
             reference_line,
             sections,
             predecessor: r.link.as_ref().and_then(|link| {
@@ -58,17 +72,30 @@ impl From<&opendrive::road::Road> for Road {
                     .as_ref()
                     .and_then(|scr| Some(scr.element_id.parse().unwrap()))
             }),
+            elevation,
         }
     }
 }
 
 impl Road {
     pub fn interpolate(&self, s: OrderedFloat<f32>) -> Transform {
-        self.reference_line
+        let ref_line = self
+            .reference_line
             .range(..=s)
             .next_back()
             .unwrap()
             .1
-            .interpolate(*s)
+            .interpolate(*s);
+
+        ref_line.with_translation(
+            ref_line.translation
+                + Vec3::Y
+                    * self
+                        .elevation
+                        .range(..=s)
+                        .next_back()
+                        .and_then(|e| Some(e.1.eval(*s)))
+                        .unwrap_or_default(),
+        )
     }
 }

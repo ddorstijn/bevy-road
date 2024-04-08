@@ -64,7 +64,7 @@ fn move_car(
         );
     }
 
-    let max_length = road.iter().map(|r| r.0.length).max().unwrap();
+    let max_length = road.iter().map(|r| r.0.length).max().unwrap_or_default();
 
     car.s = (car.s + 5.0 * time.delta_seconds()) % *max_length;
 }

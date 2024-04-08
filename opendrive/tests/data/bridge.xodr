@@ -1,0 +1,1042 @@
+<OpenDRIVE>
+    <header name="highway bridge" revMajor="1" revMinor="5" date="2024-04-07 16:41:08.894822"
+        north="0.0" south="0.0" east="0.0" west="0.0" />
+    <road rule="RHT" id="1" junction="-1" length="300.0">
+        <link>
+            <successor elementType="junction" elementId="300" />
+        </link>
+        <planView>
+            <geometry s="0" x="0" y="0" hdg="0" length="300.0">
+                <spiral curvStart="0.001" curvEnd="1e-06" />
+            </geometry>
+        </planView>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="3" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                    <lane id="2" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="broken" weight="standard" color="standard"
+                            height="0.02" width="0.2">
+                            <type name="broken" width="0.2">
+                                <line length="3" space="9" tOffset="0" width="0.15" sOffset="0" />
+                            </type>
+                        </roadMark>
+                    </lane>
+                    <lane id="1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="broken" weight="standard" color="standard"
+                            height="0.02" width="0.2">
+                            <type name="broken" width="0.2">
+                                <line length="3" space="9" tOffset="0" width="0.15" sOffset="0" />
+                            </type>
+                        </roadMark>
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="broken" weight="standard" color="standard"
+                            height="0.02" width="0.2">
+                            <type name="broken" width="0.2">
+                                <line length="3" space="9" tOffset="0" width="0.15" sOffset="0" />
+                            </type>
+                        </roadMark>
+                    </lane>
+                    <lane id="-2" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="broken" weight="standard" color="standard"
+                            height="0.02" width="0.2">
+                            <type name="broken" width="0.2">
+                                <line length="3" space="9" tOffset="0" width="0.15" sOffset="0" />
+                            </type>
+                        </roadMark>
+                    </lane>
+                    <lane id="-3" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="2" junction="-1" length="140">
+        <link>
+            <predecessor elementType="junction" elementId="300" />
+            <successor elementType="junction" elementId="400" />
+        </link>
+        <planView>
+            <geometry s="0" x="298.20055066512157" y="29.93778755359926" hdg="0.15014999999999998"
+                length="140">
+                <line />
+            </geometry>
+        </planView>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="2" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                    <lane id="1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="broken" weight="standard" color="standard"
+                            height="0.02" width="0.2">
+                            <type name="broken" width="0.2">
+                                <line length="3" space="9" tOffset="0" width="0.15" sOffset="0" />
+                            </type>
+                        </roadMark>
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="broken" weight="standard" color="standard"
+                            height="0.02" width="0.2">
+                            <type name="broken" width="0.2">
+                                <line length="3" space="9" tOffset="0" width="0.15" sOffset="0" />
+                            </type>
+                        </roadMark>
+                    </lane>
+                    <lane id="-2" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="3" junction="-1" length="200">
+        <link>
+            <predecessor elementType="junction" elementId="400" />
+        </link>
+        <planView>
+            <geometry s="0" x="436.62536181808287" y="50.87989005709688" hdg="0.15014999999999998"
+                length="200">
+                <line />
+            </geometry>
+        </planView>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="3" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                    <lane id="2" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="broken" weight="standard" color="standard"
+                            height="0.02" width="0.2">
+                            <type name="broken" width="0.2">
+                                <line length="3" space="9" tOffset="0" width="0.15" sOffset="0" />
+                            </type>
+                        </roadMark>
+                    </lane>
+                    <lane id="1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="broken" weight="standard" color="standard"
+                            height="0.02" width="0.2">
+                            <type name="broken" width="0.2">
+                                <line length="3" space="9" tOffset="0" width="0.15" sOffset="0" />
+                            </type>
+                        </roadMark>
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="broken" weight="standard" color="standard"
+                            height="0.02" width="0.2">
+                            <type name="broken" width="0.2">
+                                <line length="3" space="9" tOffset="0" width="0.15" sOffset="0" />
+                            </type>
+                        </roadMark>
+                    </lane>
+                    <lane id="-2" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="broken" weight="standard" color="standard"
+                            height="0.02" width="0.2">
+                            <type name="broken" width="0.2">
+                                <line length="3" space="9" tOffset="0" width="0.15" sOffset="0" />
+                            </type>
+                        </roadMark>
+                    </lane>
+                    <lane id="-3" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="10" junction="-1" length="62.83185307179586">
+        <link>
+            <predecessor elementType="junction" elementId="100" />
+            <successor elementType="junction" elementId="300" />
+        </link>
+        <planView>
+            <geometry s="0" x="344.6314732456883" y="-9.561192538517272" hdg="3.291742653589793"
+                length="31.41592653589793">
+                <arc curvature="-0.05" />
+            </geometry>
+            <geometry s="31.41592653589793" x="321.8647712947656" y="7.222051554263251"
+                hdg="1.7209463267948966" length="31.41592653589793">
+                <arc curvature="0.05" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="-0.15915494309189535" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="20" junction="-1" length="62.83185307179586">
+        <link>
+            <predecessor elementType="junction" elementId="300" />
+            <successor elementType="junction" elementId="200" />
+        </link>
+        <planView>
+            <geometry s="0" x="297.30303198640024" y="35.87027946015475" hdg="0.15014999999999998"
+                length="31.41592653589793">
+                <arc curvature="0.05" />
+            </geometry>
+            <geometry s="31.41592653589793" x="314.0862760791808" y="58.63698141107745"
+                hdg="1.7209463267948966" length="31.41592653589793">
+                <arc curvature="-0.05" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="0" b="0.15915494309189535" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="30" junction="-1" length="12">
+        <link>
+            <predecessor elementType="junction" elementId="100" />
+            <successor elementType="junction" elementId="200" />
+        </link>
+        <planView>
+            <geometry s="0" x="368.3104749203236" y="34.476346898792585" hdg="1.7209463267948966"
+                length="12">
+                <line />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="40" junction="-1" length="100">
+        <link>
+            <predecessor elementType="junction" elementId="100" />
+        </link>
+        <planView>
+            <geometry s="0" x="380.2773906366085" y="-44.62354518861379" hdg="4.864109776711484"
+                length="100">
+                <line />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="50" junction="-1" length="100">
+        <link>
+            <successor elementType="junction" elementId="200" />
+        </link>
+        <planView>
+            <geometry s="0" x="339.74520786678187" y="224.3394629010177" hdg="4.860968184057894"
+                length="100">
+                <line />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="70" junction="-1" length="62.83185307179586">
+        <link>
+            <predecessor elementType="junction" elementId="100" />
+            <successor elementType="junction" elementId="400" />
+        </link>
+        <planView>
+            <geometry s="0" x="403.9563923112431" y="-0.586005751304004" hdg="6.433335307179586"
+                length="31.41592653589793">
+                <arc curvature="0.05" />
+            </geometry>
+            <geometry s="31.41592653589793" x="420.73963640402366" y="22.180696199618694"
+                hdg="8.004131633974483" length="31.41592653589793">
+                <arc curvature="-0.05" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="-0.15915494309189535" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="60" junction="-1" length="62.83185307179586">
+        <link>
+            <predecessor elementType="junction" elementId="200" />
+            <successor elementType="junction" elementId="400" />
+        </link>
+        <planView>
+            <geometry s="0" x="390.1944392375161" y="90.37887014921341" hdg="6.433335307179586"
+                length="31.41592653589793">
+                <arc curvature="-0.05" />
+            </geometry>
+            <geometry s="31.41592653589793" x="412.96114118843883" y="73.59562605643289"
+                hdg="4.86253898038469" length="31.41592653589793">
+                <arc curvature="0.05" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="-0.15915494309189535" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="driving" level="false">
+                        <link />
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="100" junction="100" length="58.966379714771804">
+        <link>
+            <predecessor elementType="road" elementId="10" contactPoint="start" />
+            <successor elementType="road" elementId="30" contactPoint="start" />
+        </link>
+        <planView>
+            <geometry s="0" x="344.6314732456883" y="-9.561192538517272" hdg="6.433335307179586"
+                length="18.308224377167537">
+                <spiral curvStart="1e-09" curvEnd="0.057753478889612186" />
+            </geometry>
+            <geometry s="18.308224377167537" x="361.7611682130873" y="-3.7711114214269834"
+                hdg="6.962017141370213" length="22.115376356252302">
+                <spiral curvStart="0.057753478889612186" curvEnd="0.01984814703073212" />
+            </geometry>
+            <geometry s="40.42360073341984" x="369.9529463831401" y="16.034456906269522"
+                hdg="7.820111722912972" length="18.54277898135197">
+                <spiral curvStart="0.01984814703073212" curvEnd="9.999999994736442e-10" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link>
+                            <predecessor id="1" />
+                            <successor id="-1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="101" junction="100" length="80.00002851243882">
+        <link>
+            <predecessor elementType="road" elementId="40" contactPoint="start" />
+            <successor elementType="road" elementId="30" contactPoint="start" />
+        </link>
+        <planView>
+            <geometry s="0" x="380.2773906366085" y="-44.62354518861379" hdg="8.005702430301277"
+                length="26.666671053157692">
+                <spiral curvStart="1e-09" curvEnd="-0.0001178101646418166" />
+            </geometry>
+            <geometry s="26.666671053157692" x="376.2608094513086" y="-18.26110477282227"
+                hdg="8.004131641181003" length="26.666686406123432">
+                <spiral curvStart="-0.0001178101646418166" curvEnd="5.890432903358058e-05" />
+            </geometry>
+            <geometry s="53.333357459281125" x="372.29254429421746" y="8.108669155629304"
+                hdg="8.003346229458174" length="26.666671053157692">
+                <spiral curvStart="5.8904329033580584e-05" curvEnd="1.0000000000021927e-09" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="driving" level="false">
+                        <link>
+                            <predecessor id="-1" />
+                            <successor id="1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link>
+                            <predecessor id="1" />
+                            <successor id="-1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="102" junction="100" length="58.9470438390503">
+        <link>
+            <predecessor elementType="road" elementId="10" contactPoint="start" />
+            <successor elementType="road" elementId="40" contactPoint="start" />
+        </link>
+        <planView>
+            <geometry s="0" x="344.6314732456883" y="-9.561192538517272" hdg="6.433335307179586"
+                length="18.2815707207546">
+                <spiral curvStart="1e-09" curvEnd="-0.057817595747406546" />
+            </geometry>
+            <geometry s="18.2815707207546" x="362.68119086764955" y="-10.023306363660714"
+                hdg="5.904837083540265" length="22.126297649255548">
+                <spiral curvStart="-0.05781759574740655" curvEnd="-0.01972595516082625" />
+            </geometry>
+            <geometry s="40.40786837001015" x="376.37041859234427" y="-26.528893279958304"
+                hdg="5.0469612394523855" length="18.539175469040153">
+                <spiral curvStart="-0.019725955160826248" curvEnd="9.999999994736442e-10" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link>
+                            <predecessor id="1" />
+                            <successor id="-1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="103" junction="100" length="58.96637971477179">
+        <link>
+            <predecessor elementType="road" elementId="30" contactPoint="start" />
+            <successor elementType="road" elementId="70" contactPoint="start" />
+        </link>
+        <planView>
+            <geometry s="0" x="368.3104749203236" y="34.476346898792585" hdg="4.86253898038469"
+                length="18.54277898135197">
+                <spiral curvStart="1e-09" curvEnd="0.01984814703073208" />
+            </geometry>
+            <geometry s="18.54277898135197" x="372.1967440448277" y="16.373918020478637"
+                hdg="5.0465588914462005" length="22.115376356252273">
+                <spiral curvStart="0.01984814703073208" curvEnd="0.05775347888961224" />
+            </geometry>
+            <geometry s="40.65815533760424" x="385.8805437149654" y="-0.12212371558477741"
+                hdg="5.904653472988959" length="18.30822437716755">
+                <spiral curvStart="0.057753478889612214" curvEnd="9.999999994736442e-10" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link>
+                            <predecessor id="1" />
+                            <successor id="-1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="104" junction="100" length="58.985759632787705">
+        <link>
+            <predecessor elementType="road" elementId="40" contactPoint="start" />
+            <successor elementType="road" elementId="70" contactPoint="start" />
+        </link>
+        <planView>
+            <geometry s="0" x="380.2773906366085" y="-44.62354518861379" hdg="8.005702430301277"
+                length="18.54638965927351">
+                <spiral curvStart="1e-09" curvEnd="-0.019970237242116006" />
+            </geometry>
+            <geometry s="18.54638965927351" x="378.612833306367" y="-26.180372149286594"
+                hdg="7.820514538834262" length="22.104424497741714">
+                <spiral curvStart="-0.019970237242116013" curvEnd="-0.05768952092606559" />
+            </geometry>
+            <geometry s="40.65081415701522" x="386.8022017527169" y="-6.385538561934872"
+                hdg="6.962202408363536" length="18.334945475772486">
+                <spiral curvStart="-0.05768952092606558" curvEnd="9.999999994736442e-10" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link>
+                            <predecessor id="1" />
+                            <successor id="-1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="200" junction="200" length="58.96637986034821">
+        <link>
+            <predecessor elementType="road" elementId="20" contactPoint="end" />
+            <successor elementType="road" elementId="30" contactPoint="end" />
+        </link>
+        <planView>
+            <geometry s="0" x="330.8695201719613" y="81.40368336200015" hdg="0.15015"
+                length="18.308223523562294">
+                <spiral curvStart="1e-09" curvEnd="-0.05775347843872407" />
+            </geometry>
+            <geometry s="18.308223523562294" x="348.9453679737488" y="80.93980173944676"
+                hdg="-0.3785317871055861" length="22.115377355433953">
+                <spiral curvStart="-0.05775347843872408" curvEnd="-0.019848148597184846" />
+            </geometry>
+            <geometry s="40.42360087899625" x="362.6291685744582" y="64.44375961995999"
+                hdg="-1.2366264197529717" length="18.54277898135197">
+                <spiral curvStart="-0.019848148597184836" curvEnd="9.999999994736442e-10" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="driving" level="false">
+                        <link>
+                            <predecessor id="1" />
+                            <successor id="-1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="201" junction="200" length="58.94704369398008">
+        <link>
+            <predecessor elementType="road" elementId="20" contactPoint="end" />
+            <successor elementType="road" elementId="50" contactPoint="end" />
+        </link>
+        <planView>
+            <geometry s="0" x="330.8695201719613" y="81.40368336200015" hdg="0.15015"
+                length="18.281571571875947">
+                <spiral curvStart="1e-09" curvEnd="0.05781759619640559" />
+            </geometry>
+            <geometry s="18.281571571875947" x="347.97477726758507" y="87.18434630779306"
+                hdg="0.6786482706299914" length="22.12629665306398">
+                <spiral curvStart="0.0578175961964056" curvEnd="0.019725953593252014" />
+            </geometry>
+            <geometry s="40.40786822493993" x="356.1689162719134" y="107.00063766386498"
+                hdg="1.536524063718792" length="18.53917546904015">
+                <spiral curvStart="0.01972595359325202" curvEnd="9.999999994736442e-10" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="driving" level="false">
+                        <link>
+                            <predecessor id="1" />
+                            <successor id="-1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="202" junction="200" length="80.00002851243883">
+        <link>
+            <predecessor elementType="road" elementId="30" contactPoint="end" />
+            <successor elementType="road" elementId="50" contactPoint="end" />
+        </link>
+        <planView>
+            <geometry s="0" x="366.51543756288095" y="46.34133071190355" hdg="1.7209463267948966"
+                length="26.66667105315769">
+                <spiral curvStart="1e-09" curvEnd="5.89043290335805e-05" />
+            </geometry>
+            <geometry s="26.66667105315769" x="362.51956230573546" y="72.70691978165777"
+                hdg="1.7217317313112048" length="26.666686406123453">
+                <spiral curvStart="5.8904329033580496e-05" curvEnd="-0.00011781016464181655" />
+            </geometry>
+            <geometry s="53.333357459281146" x="358.50988053514504" y="99.07042784665595"
+                hdg="1.7209463195883772" length="26.66667105315769">
+                <spiral curvStart="-0.00011781016464181655" curvEnd="1.0000000000021927e-09" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="driving" level="false">
+                        <link>
+                            <predecessor id="1" />
+                            <successor id="-1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link>
+                            <predecessor id="-1" />
+                            <successor id="1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="203" junction="200" length="58.9663798603482">
+        <link>
+            <predecessor elementType="road" elementId="30" contactPoint="end" />
+            <successor elementType="road" elementId="60" contactPoint="start" />
+        </link>
+        <planView>
+            <geometry s="0" x="366.51543756288095" y="46.34133071190355" hdg="1.7209463267948966"
+                length="18.54277898135197">
+                <spiral curvStart="1e-09" curvEnd="-0.01984814859718479" />
+            </geometry>
+            <geometry s="18.54277898135197" x="364.8729659612749" y="64.78322069258422"
+                hdg="1.5369264197529717" length="22.115377355433928">
+                <spiral curvStart="-0.019848148597184794" curvEnd="-0.057753478438724096" />
+            </geometry>
+            <geometry s="40.65815633678589" x="373.064744906835" y="84.58878966181445"
+                hdg="0.6788317871055873" length="18.308223523562308">
+                <spiral curvStart="-0.0577534784387241" curvEnd="9.999999994736442e-10" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="driving" level="false">
+                        <link>
+                            <predecessor id="1" />
+                            <successor id="1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+            </laneSection>
+        </lanes>
+    </road>
+    <road rule="RHT" id="204" junction="200" length="58.985759632787705">
+        <link>
+            <predecessor elementType="road" elementId="60" contactPoint="start" />
+            <successor elementType="road" elementId="50" contactPoint="end" />
+        </link>
+        <planView>
+            <geometry s="0" x="390.1944392375161" y="90.37887014921341" hdg="3.291742653589793"
+                length="18.3349454757725">
+                <spiral curvStart="1e-09" curvEnd="-0.05768952092606564" />
+            </geometry>
+            <geometry s="18.3349454757725" x="372.0923954067798" y="90.8445349320136"
+                hdg="2.762875552405841" length="22.104424497741693">
+                <spiral curvStart="-0.05768952092606566" curvEnd="-0.019970237242115954" />
+            </geometry>
+            <geometry s="40.43936997351419" x="358.41407302901314" y="107.3310351437294"
+                hdg="1.9045634219351162" length="18.546389659273515">
+                <spiral curvStart="-0.019970237242115947" curvEnd="9.999999994736442e-10" />
+            </geometry>
+        </planView>
+        <elevationProfile>
+            <elevation s="0" a="10" b="0" c="0" d="0" />
+        </elevationProfile>
+        <lanes>
+            <laneSection s="0">
+                <center>
+                    <lane id="0" type="none" level="false">
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving" level="false">
+                        <link>
+                            <predecessor id="1" />
+                            <successor id="1" />
+                        </link>
+                        <width a="3.0" b="0.0" c="-0.0" d="0.0" sOffset="0" />
+                        <roadMark sOffset="0" type="solid" weight="standard" color="standard"
+                            height="0.02" width="0.2" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <junction name="first_highway_connection" id="300" type="direct">
+        <connection incomingRoad="1" id="0" contactPoint="start" linkedRoad="2">
+            <laneLink from="2" to="2" />
+            <laneLink from="1" to="1" />
+            <laneLink from="-1" to="-1" />
+            <laneLink from="-2" to="-2" />
+        </connection>
+        <connection incomingRoad="1" id="1" contactPoint="end" linkedRoad="10">
+            <laneLink from="-3" to="1" />
+        </connection>
+        <connection incomingRoad="1" id="2" contactPoint="start" linkedRoad="20">
+            <laneLink from="3" to="1" />
+        </connection>
+    </junction>
+    <junction name="right_junction" id="100" type="default">
+        <connection incomingRoad="10" id="0" contactPoint="start" connectingRoad="100">
+            <laneLink from="1" to="-1" />
+        </connection>
+        <connection incomingRoad="30" id="1" contactPoint="end" connectingRoad="100">
+            <laneLink from="-1" to="-1" />
+        </connection>
+        <connection incomingRoad="30" id="2" contactPoint="end" connectingRoad="101">
+            <laneLink from="1" to="1" />
+            <laneLink from="-1" to="-1" />
+        </connection>
+        <connection incomingRoad="40" id="3" contactPoint="start" connectingRoad="101">
+            <laneLink from="1" to="-1" />
+            <laneLink from="-1" to="1" />
+        </connection>
+        <connection incomingRoad="10" id="4" contactPoint="start" connectingRoad="102">
+            <laneLink from="1" to="-1" />
+        </connection>
+        <connection incomingRoad="40" id="5" contactPoint="end" connectingRoad="102">
+            <laneLink from="-1" to="-1" />
+        </connection>
+        <connection incomingRoad="30" id="6" contactPoint="start" connectingRoad="103">
+            <laneLink from="1" to="-1" />
+        </connection>
+        <connection incomingRoad="70" id="7" contactPoint="end" connectingRoad="103">
+            <laneLink from="-1" to="-1" />
+        </connection>
+        <connection incomingRoad="40" id="8" contactPoint="start" connectingRoad="104">
+            <laneLink from="1" to="-1" />
+        </connection>
+        <connection incomingRoad="70" id="9" contactPoint="end" connectingRoad="104">
+            <laneLink from="-1" to="-1" />
+        </connection>
+    </junction>
+    <junction name="left_junction" id="200" type="default">
+        <connection incomingRoad="20" id="0" contactPoint="start" connectingRoad="200">
+            <laneLink from="1" to="1" />
+        </connection>
+        <connection incomingRoad="30" id="1" contactPoint="end" connectingRoad="200">
+            <laneLink from="-1" to="1" />
+        </connection>
+        <connection incomingRoad="20" id="2" contactPoint="start" connectingRoad="201">
+            <laneLink from="1" to="1" />
+        </connection>
+        <connection incomingRoad="50" id="3" contactPoint="end" connectingRoad="201">
+            <laneLink from="-1" to="1" />
+        </connection>
+        <connection incomingRoad="50" id="4" contactPoint="end" connectingRoad="202">
+            <laneLink from="1" to="-1" />
+            <laneLink from="-1" to="1" />
+        </connection>
+        <connection incomingRoad="30" id="5" contactPoint="start" connectingRoad="202">
+            <laneLink from="1" to="1" />
+            <laneLink from="-1" to="-1" />
+        </connection>
+        <connection incomingRoad="30" id="6" contactPoint="start" connectingRoad="203">
+            <laneLink from="1" to="1" />
+        </connection>
+        <connection incomingRoad="60" id="7" contactPoint="end" connectingRoad="203">
+            <laneLink from="1" to="1" />
+        </connection>
+        <connection incomingRoad="60" id="8" contactPoint="start" connectingRoad="204">
+            <laneLink from="1" to="-1" />
+        </connection>
+        <connection incomingRoad="50" id="9" contactPoint="end" connectingRoad="204">
+            <laneLink from="1" to="-1" />
+        </connection>
+    </junction>
+    <junction name="second_highway_connection" id="400" type="direct">
+        <connection incomingRoad="2" id="0" contactPoint="start" linkedRoad="3">
+            <laneLink from="2" to="2" />
+            <laneLink from="1" to="1" />
+            <laneLink from="-1" to="-1" />
+            <laneLink from="-2" to="-2" />
+        </connection>
+        <connection incomingRoad="70" id="1" contactPoint="start" linkedRoad="3">
+            <laneLink from="-1" to="-3" />
+        </connection>
+        <connection incomingRoad="3" id="2" contactPoint="end" linkedRoad="60">
+            <laneLink from="3" to="1" />
+        </connection>
+    </junction>
+</OpenDRIVE>
