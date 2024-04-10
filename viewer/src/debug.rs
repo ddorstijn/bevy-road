@@ -12,7 +12,13 @@ impl Plugin for DebugPlugin {
             .add_systems(Startup, setup)
             .add_systems(
                 Update,
-                (draw_axis, draw_reference_line, update_hit_text, move_car),
+                (
+                    draw_axis,
+                    draw_reference_line,
+                    update_hit_text,
+                    debug_heading,
+                    move_car,
+                ),
             );
     }
 }
@@ -39,11 +45,10 @@ fn draw_axis(mut gizmos: Gizmos<DebugGizmos>) {
 
 fn draw_reference_line(roads: Query<&RoadComponent>, mut gizmos: Gizmos<DebugGizmos>) {
     for road in &roads {
-        let positions = (0..)
-            .step_by(5)
-            .map(|s| (s as f32, road.0.interpolate(OrderedFloat(s as f32))))
-            .take_while(|(s, _)| s <= &road.0.length)
-            .map(|(_, transform)| transform.translation)
+        let steps = road.0.length.ceil() * 10.0;
+        let step_size = road.0.length / steps;
+        let positions = (0..=steps as u32)
+            .map(|step| road.0.interpolate(step_size * step as f32).translation)
             .collect::<Vec<_>>();
 
         gizmos.linestrip(positions, Color::WHITE);
@@ -68,29 +73,28 @@ fn update_hit_text(
     text.single_mut().sections[0].value = format!("x: {}, y: {}", p.x, -p.z);
 }
 
-#[derive(Default)]
-struct Car {
-    s: OrderedFloat<f32>,
-}
-
-fn move_car(
-    mut gizmos: Gizmos<DebugGizmos>,
-    mut car: Local<Car>,
-    road: Query<&RoadComponent>,
-    time: Res<Time>,
-) {
+fn debug_heading(mut gizmos: Gizmos<DebugGizmos>, road: Query<&RoadComponent>) {
     for road in &road {
         let road = &road.0;
-        let transform = road.interpolate(car.s);
 
+        for rl in road.reference_line.values() {
+            let end_tr = rl.interpolate(rl.length);
+            let start = end_tr.translation;
+            let end = start + GlobalTransform::from(end_tr).forward();
+            gizmos.arrow(start, end, Color::CYAN);
+        }
+    }
+}
+
+fn move_car(mut gizmos: Gizmos<DebugGizmos>, road: Query<&RoadComponent>, time: Res<Time>) {
+    for road in &road {
+        let road = &road.0;
+        let transform =
+            road.interpolate(OrderedFloat(2.0 * time.elapsed_seconds_wrapped()) % road.length);
         gizmos.arrow(
             transform.translation - *transform.forward() * 5.0,
             transform.translation + *transform.forward() * 5.0,
             Color::YELLOW,
         );
     }
-
-    let max_length = road.iter().map(|r| r.0.length).max().unwrap_or_default();
-
-    car.s = (car.s + 5.0 * time.delta_seconds()) % *max_length;
 }

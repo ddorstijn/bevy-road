@@ -68,7 +68,7 @@ impl From<&opendrive::road::geometry::Geometry> for ReferenceLine {
 }
 
 impl ReferenceLine {
-    pub(crate) fn interpolate(&self, s: f32) -> Transform {
+    pub fn interpolate(&self, s: f32) -> Transform {
         match &self.r#type {
             GeometryType::Line => {
                 let (sin_hdg, cos_hdg) = self.hdg.sin_cos();

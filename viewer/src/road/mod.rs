@@ -1,6 +1,6 @@
 use bevy::{
     input::common_conditions::input_just_pressed,
-    pbr::wireframe::Wireframe,
+    // pbr::wireframe::Wireframe,
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task},
 };
@@ -57,7 +57,7 @@ fn load_opendrive(
                 let project = load(handle.path());
 
                 for (id, road) in project.roads {
-                    let steps = road.length.ceil();
+                    let steps = road.length.ceil() * 10.0;
                     let step_size = road.length / steps;
 
                     let positions = (0..=steps as u32)
@@ -130,7 +130,7 @@ fn load_opendrive(
                             ..default()
                         },
                         RoadComponent(road),
-                        Wireframe,
+                        // Wireframe,
                     ));
                 }
             };
