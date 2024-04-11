@@ -86,11 +86,12 @@ impl ReferenceLine {
             } => {
                 let (xs_spiral, ys_spiral, as_spiral) = odr_spiral(s - self.s + s_offset, *dk);
                 let hdg = self.hdg - a_offset;
+                let x_spiral = xs_spiral - x_offset;
+                let y_spiral = ys_spiral - y_offset;
+
                 let (s_hdg, c_hdg) = hdg.sin_cos();
-                let x =
-                    (c_hdg * (xs_spiral - x_offset)) - (s_hdg * (ys_spiral - y_offset)) + self.x;
-                let y =
-                    (s_hdg * (xs_spiral - x_offset)) + (c_hdg * (ys_spiral - y_offset)) + self.y;
+                let x = (c_hdg * x_spiral) - (s_hdg * y_spiral) + self.x;
+                let y = (s_hdg * x_spiral) + (c_hdg * y_spiral) + self.y;
 
                 let hdg = as_spiral + hdg;
 

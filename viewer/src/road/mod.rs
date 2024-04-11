@@ -67,7 +67,7 @@ fn load_opendrive(
                             let road_s = step_size * step as f32;
                             let (x, neg_z, y, hdg) = road.interpolate(road_s);
                             let transform = Transform::from_xyz(x, y, -neg_z)
-                                .looking_to(Vec3::new(hdg.cos(), 0.0, -hdg.sin()), Vec3::Y);
+                                .with_rotation(Quat::from_axis_angle(Vec3::Y, hdg - PI * 0.5));
 
                             let (s_section, section) =
                                 road.sections.range(..=road_s).next_back().unwrap();

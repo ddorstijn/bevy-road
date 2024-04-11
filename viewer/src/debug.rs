@@ -9,6 +9,7 @@ impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(WorldInspectorPlugin::new())
             .init_gizmo_group::<DebugGizmos>()
+            .init_resource::<CarOffset>()
             .add_systems(Startup, setup)
             .add_systems(
                 Update,
@@ -17,6 +18,7 @@ impl Plugin for DebugPlugin {
                     draw_reference_line,
                     update_hit_text,
                     debug_heading,
+                    update_speed,
                     move_car,
                 ),
             );
@@ -80,23 +82,51 @@ fn debug_heading(mut gizmos: Gizmos<DebugGizmos>, road: Query<&RoadComponent>) {
     for road in &road {
         let road = &road.0;
 
+        let mut sum_length = OrderedFloat(0.0);
         for rl in road.reference_line.values() {
-            let (x, neg_z, hdg) = rl.interpolate(rl.length);
-            let start = Vec3::new(x, 0.0, -neg_z);
-            let end = start + Vec3::new(hdg.cos(), 0.0, -hdg.sin());
-            gizmos.arrow(start, end, Color::CYAN);
+            sum_length += rl.length;
+            let (x, neg_z, y, hdg) = road.interpolate(sum_length);
+
+            let p = Vec3::new(x, y, -neg_z);
+            let h = Vec3::new(hdg.cos(), 0.0, -hdg.sin());
+            gizmos.arrow(p, p + h * 5.0, Color::CYAN);
         }
     }
 }
 
-fn move_car(mut gizmos: Gizmos<DebugGizmos>, road: Query<&RoadComponent>, time: Res<Time>) {
+fn update_speed(mut offset: ResMut<CarOffset>, keys: Res<ButtonInput<KeyCode>>) {
+    if keys.pressed(KeyCode::Equal) {
+        offset.0 += 1.;
+    }
+
+    if keys.pressed(KeyCode::Minus) {
+        offset.0 -= 1.;
+    }
+}
+
+#[derive(Resource)]
+struct CarOffset(f32);
+
+impl Default for CarOffset {
+    fn default() -> Self {
+        Self(4.0)
+    }
+}
+
+fn move_car(
+    mut gizmos: Gizmos<DebugGizmos>,
+    road: Query<&RoadComponent>,
+    time: Res<Time>,
+    car_offset: Res<CarOffset>,
+) {
     for road in &road {
         let road = &road.0;
-        let (x, neg_z, y, hdg) =
-            road.interpolate(OrderedFloat(2.0 * time.elapsed_seconds_wrapped()) % road.length);
+        let (x, neg_z, y, hdg) = road.interpolate(OrderedFloat(
+            (car_offset.0 + 4.0 * time.elapsed_seconds_wrapped()).rem_euclid(*road.length),
+        ));
 
         let p = Vec3::new(x, y, -neg_z);
         let h = Vec3::new(hdg.cos(), 0.0, -hdg.sin());
-        gizmos.arrow(p, p + h * 5.0, Color::YELLOW);
+        gizmos.arrow(p, p + h * 4.0, Color::YELLOW);
     }
 }
