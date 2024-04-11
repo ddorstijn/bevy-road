@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 
 use crate::{lane::LaneSection, reference_line::ReferenceLine, Polynomal};
 
-use bevy::{math::Vec3, transform::components::Transform};
 use ordered_float::OrderedFloat;
 
 #[derive(Debug)]
@@ -78,8 +77,8 @@ impl From<&opendrive::road::Road> for Road {
 }
 
 impl Road {
-    pub fn interpolate(&self, s: OrderedFloat<f32>) -> Transform {
-        let ref_line = self
+    pub fn interpolate(&self, s: OrderedFloat<f32>) -> (f32, f32, f32, f32) {
+        let (x, y, hdg) = self
             .reference_line
             .range(..=s)
             .next_back()
@@ -87,15 +86,13 @@ impl Road {
             .1
             .interpolate(*s);
 
-        ref_line.with_translation(
-            ref_line.translation
-                + Vec3::Y
-                    * self
-                        .elevation
-                        .range(..=s)
-                        .next_back()
-                        .and_then(|e| Some(e.1.eval(*s)))
-                        .unwrap_or_default(),
-        )
+        let z = self
+            .elevation
+            .range(..=s)
+            .next_back()
+            .and_then(|e| Some(e.1.eval(*s)))
+            .unwrap_or_default();
+
+        (x, y, z, hdg)
     }
 }

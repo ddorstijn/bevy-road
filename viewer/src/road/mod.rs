@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::{
     input::common_conditions::input_just_pressed,
     // pbr::wireframe::Wireframe,
@@ -63,7 +65,9 @@ fn load_opendrive(
                     let positions = (0..=steps as u32)
                         .flat_map(|step| {
                             let road_s = step_size * step as f32;
-                            let transform = road.interpolate(road_s);
+                            let (x, neg_z, y, hdg) = road.interpolate(road_s);
+                            let transform = Transform::from_xyz(x, y, -neg_z)
+                                .looking_to(Vec3::new(hdg.cos(), 0.0, -hdg.sin()), Vec3::Y);
 
                             let (s_section, section) =
                                 road.sections.range(..=road_s).next_back().unwrap();

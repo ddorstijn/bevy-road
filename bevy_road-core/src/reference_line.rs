@@ -1,7 +1,5 @@
 use std::f32::consts::PI;
 
-use bevy::{math::Vec3, transform::components::Transform};
-
 use crate::odr_spiral::odr_spiral;
 
 #[derive(Debug)]
@@ -68,15 +66,14 @@ impl From<&opendrive::road::geometry::Geometry> for ReferenceLine {
 }
 
 impl ReferenceLine {
-    pub fn interpolate(&self, s: f32) -> Transform {
+    pub fn interpolate(&self, s: f32) -> (f32, f32, f32) {
         match &self.r#type {
             GeometryType::Line => {
                 let (sin_hdg, cos_hdg) = self.hdg.sin_cos();
                 let x = (cos_hdg * (s - self.s)) + self.x;
                 let y = (sin_hdg * (s - self.s)) + self.y;
 
-                Transform::from_xyz(x, 0.0, -y)
-                    .looking_to(Vec3::new(cos_hdg, 0.0, -sin_hdg), Vec3::Y)
+                (x, y, self.hdg)
             }
             GeometryType::Spiral {
                 k_start: _,
@@ -97,19 +94,16 @@ impl ReferenceLine {
 
                 let hdg = as_spiral + hdg;
 
-                Transform::from_xyz(x, 0.0, -y)
-                    .looking_to(Vec3::new(hdg.cos(), 0.0, -hdg.sin()), Vec3::Y)
+                (x, y, hdg)
             }
             GeometryType::Arc { curvature } => {
-                let angle_at_s = (s - self.s) * curvature - PI * 0.5;
+                let hdg = self.hdg + (s - self.s) * curvature;
+                let o_hdg = hdg - PI * 0.5;
                 let r = curvature.recip();
-                let x = r * ((self.hdg + angle_at_s).cos() - self.hdg.sin()) + self.x;
-                let y = r * ((self.hdg + angle_at_s).sin() + self.hdg.cos()) + self.y;
+                let x = r * (o_hdg.cos() - self.hdg.sin()) + self.x;
+                let y = r * (o_hdg.sin() + self.hdg.cos()) + self.y;
 
-                let delta = PI * 0.5 - (s - self.s) * curvature - self.hdg;
-
-                Transform::from_xyz(x, 0.0, -y)
-                    .looking_to(Vec3::new(delta.sin(), 0.0, -delta.cos()), Vec3::Y)
+                (x, y, hdg)
             }
         }
     }

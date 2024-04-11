@@ -1034,7 +1034,6 @@ dependencies = [
 name = "bevy_road-core"
 version = "0.1.0"
 dependencies = [
- "bevy",
  "opendrive",
  "ordered-float",
 ]
