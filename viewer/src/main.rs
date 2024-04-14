@@ -9,12 +9,15 @@ use bevy::{
         RenderPlugin,
     },
 };
-use camera::{CameraPlugin, PanOrbitCamera};
+use building::BuilderPlugin;
 use debug::DebugPlugin;
 use road::RoadPlugin;
+use smooth_bevy_cameras::{
+    controllers::unreal::{UnrealCameraBundle, UnrealCameraController, UnrealCameraPlugin},
+    LookTransformPlugin,
+};
 use states::GameStatePlugin;
 
-pub(self) mod camera;
 pub(self) mod debug;
 pub(self) mod road;
 pub(self) mod states;
@@ -29,13 +32,15 @@ fn main() {
                 }),
                 ..default()
             }),
+            LookTransformPlugin,
+            UnrealCameraPlugin::default(),
             WireframePlugin,
         ))
         .insert_resource(WireframeConfig {
             global: false,
             ..default()
         })
-        .add_plugins((CameraPlugin, GameStatePlugin, RoadPlugin))
+        .add_plugins((GameStatePlugin, RoadPlugin, BuilderPlugin))
         .add_plugins(DebugPlugin)
         .add_systems(Startup, setup_world)
         .run();
@@ -43,15 +48,14 @@ fn main() {
 
 fn setup_world(mut commands: Commands) {
     // Environment and player
-    commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_translation(Vec3::new(0.0, 10., 0.0))
-                .with_rotation(Quat::from_axis_angle(Vec3::X, -0.5 * PI)),
-            ..default()
-        },
-        Name::new("Player"),
-        PanOrbitCamera { ..default() },
-    ));
+    commands
+        .spawn((Camera3dBundle::default(), Name::new("Player")))
+        .insert(UnrealCameraBundle::new(
+            UnrealCameraController::default(),
+            Vec3::new(-2.0, 5.0, 5.0),
+            Vec3::new(0., 0., 0.),
+            Vec3::Y,
+        ));
 
     commands.spawn((
         DirectionalLightBundle {

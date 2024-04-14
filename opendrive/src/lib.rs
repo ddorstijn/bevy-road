@@ -1,7 +1,7 @@
 use core::OpenDrive;
 use std::path::Path;
 
-use quick_xml::DeError;
+pub use quick_xml::DeError;
 
 pub mod core;
 pub mod junction;

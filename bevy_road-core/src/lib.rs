@@ -1,55 +1,58 @@
 use std::{collections::BTreeMap, path::Path};
 
-use opendrive::core::OpenDrive;
+use bevy::prelude::*;
 
 use polynomal::Polynomal;
 use road::Road;
 
+pub mod geometry;
 pub mod lane;
-pub mod reference_line;
 pub mod road;
 
-mod odr_spiral;
 mod polynomal;
 
-#[derive(Debug)]
+#[derive(Component)]
+pub struct Lanes;
+
+#[derive(Debug, Resource, Clone)]
 pub struct BevyRoad {
     pub name: String,
     pub version: String,
-
-    pub roads: BTreeMap<u32, Road>,
+    pub roads: BTreeMap<String, Entity>,
 }
 
-impl From<OpenDrive> for BevyRoad {
-    fn from(odr: OpenDrive) -> Self {
-        let name = odr.header.name.unwrap_or("Untitled project".to_string());
-        let version = odr.header.version.unwrap_or("0.01".to_string());
-
-        let roads = odr
-            .road
-            .iter()
-            .map(|r| (r.id.parse().unwrap_or(0), Road::from(r)))
-            .collect();
-
+impl Default for BevyRoad {
+    fn default() -> Self {
         Self {
-            name,
-            version,
-            roads,
+            name: "Untitled project".to_string(),
+            version: "0.01".to_string(),
+            roads: BTreeMap::new(),
         }
     }
 }
 
-pub fn load<P: AsRef<Path>>(path: P) -> BevyRoad {
-    BevyRoad::from(opendrive::load_opendrive(path).expect("File can not be found"))
-}
+impl BevyRoad {
+    pub fn from_xodr<P: AsRef<Path>>(
+        path: P,
+        mut commands: Commands,
+    ) -> Result<BevyRoad, opendrive::DeError> {
+        let odr = opendrive::load_opendrive(path)?;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_it() {
-        let odr = opendrive::load_opendrive("C:\\Users\\danny\\Documents\\Projects\\Rust\\bevy_road\\opendrive\\tests\\data\\Ex_Line-Spiral-Arc.xodr").unwrap();
-        let br = crate::BevyRoad::from(odr);
+        let roads = odr
+            .road
+            .iter()
+            .map(|r| {
+                let road = Road::from(r);
+                let id = commands.spawn((Name::new(r.id.clone()), road)).id();
 
-        println!("{:?}", br);
+                (r.id.clone(), id)
+            })
+            .collect();
+
+        Ok(BevyRoad {
+            name: odr.header.name.unwrap_or("Untitled project".to_string()),
+            version: odr.header.version.unwrap_or("0.01".to_string()),
+            roads,
+        })
     }
 }
