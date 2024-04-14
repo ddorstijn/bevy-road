@@ -1,6 +1,10 @@
 use std::{collections::BTreeMap, f32::consts::PI};
 
-use crate::{geometry::Geometry, lane::LaneSection, Polynomal};
+use crate::{
+    geometry::{Geometry, GeometryType},
+    lane::LaneSection,
+    Polynomal,
+};
 
 use bevy::prelude::*;
 use ordered_float::OrderedFloat;
@@ -102,12 +106,33 @@ impl Meshable for Road {
     type Output = Mesh;
 
     fn mesh(&self) -> Self::Output {
-        let steps = self.length.ceil() * 10.0;
-        let step_size = self.length / steps;
+        let mut v: Vec<_> = self
+            .reference_line
+            .iter()
+            .flat_map(|(s, g)| match g.r#type {
+                GeometryType::Line => vec![*s],
+                GeometryType::Arc { .. } => {
+                    let steps = g.length.round();
+                    let step_size = g.length / steps;
+                    (0..=steps as u32)
+                        .map(|step| *s + step_size * step as f32)
+                        .collect()
+                }
+                GeometryType::Spiral { .. } => {
+                    let steps = g.length.round();
+                    let step_size = g.length / steps;
+                    (0..=steps as u32)
+                        .map(|step| *s + step_size * step as f32)
+                        .collect()
+                }
+            })
+            .collect();
 
-        let positions = (0..=steps as u32)
-            .flat_map(|step| {
-                let road_s = step_size * step as f32;
+        v.push(self.length);
+
+        let positions = v
+            .into_iter()
+            .flat_map(|road_s| {
                 let (x, neg_z, y, hdg) = self.interpolate(road_s);
                 let transform = Transform::from_xyz(x, y, -neg_z)
                     .with_rotation(Quat::from_axis_angle(Vec3::Y, hdg - PI * 0.5));
