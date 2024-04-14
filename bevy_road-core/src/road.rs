@@ -100,73 +100,68 @@ impl Road {
 
         (x, y, z, hdg)
     }
+
+    fn maxima(&self, s: OrderedFloat<f32>) -> [Vec3; 2] {
+        let (x, neg_z, y, hdg) = self.interpolate(s);
+        let transform = Transform::from_xyz(x, y, -neg_z)
+            .with_rotation(Quat::from_axis_angle(Vec3::Y, hdg - PI * 0.5));
+
+        let (s_section, section) = self.sections.range(..=s).next_back().unwrap();
+
+        let left_point = section
+            .left_lanes
+            .values()
+            .map(|lane| {
+                let (s_width, width) = lane.width.range(..=s - s_section).next_back().unwrap();
+
+                width.eval((s - s_section - s_width).0)
+            })
+            .sum::<f32>();
+
+        let right_point = section
+            .right_lanes
+            .values()
+            .map(|lane| {
+                let (s_width, width) = lane.width.range(..=s - s_section).next_back().unwrap();
+
+                width.eval((s - s_section - s_width).0)
+            })
+            .sum::<f32>();
+
+        let left_point = transform.translation + transform.left() * left_point;
+        let right_point = transform.translation + transform.right() * right_point;
+
+        [left_point, right_point]
+    }
 }
 
 impl Meshable for Road {
     type Output = Mesh;
 
     fn mesh(&self) -> Self::Output {
-        let mut v: Vec<_> = self
+        let mut positions: Vec<Vec3> = self
             .reference_line
             .iter()
             .flat_map(|(s, g)| match g.r#type {
-                GeometryType::Line => vec![*s],
+                GeometryType::Line => self.maxima(*s).to_vec(),
                 GeometryType::Arc { .. } => {
                     let steps = g.length.round();
                     let step_size = g.length / steps;
                     (0..=steps as u32)
-                        .map(|step| *s + step_size * step as f32)
-                        .collect()
+                        .flat_map(|step| self.maxima(*s + step_size * step as f32))
+                        .collect::<Vec<Vec3>>()
                 }
                 GeometryType::Spiral { .. } => {
                     let steps = g.length.round();
                     let step_size = g.length / steps;
                     (0..=steps as u32)
-                        .map(|step| *s + step_size * step as f32)
-                        .collect()
+                        .flat_map(|step| self.maxima(*s + step_size * step as f32))
+                        .collect::<Vec<Vec3>>()
                 }
             })
             .collect();
 
-        v.push(self.length);
-
-        let positions = v
-            .into_iter()
-            .flat_map(|road_s| {
-                let (x, neg_z, y, hdg) = self.interpolate(road_s);
-                let transform = Transform::from_xyz(x, y, -neg_z)
-                    .with_rotation(Quat::from_axis_angle(Vec3::Y, hdg - PI * 0.5));
-
-                let (s_section, section) = self.sections.range(..=road_s).next_back().unwrap();
-
-                let left_point = section
-                    .left_lanes
-                    .values()
-                    .map(|lane| {
-                        let (s_width, width) =
-                            lane.width.range(..=road_s - s_section).next_back().unwrap();
-
-                        width.eval((road_s - s_section - s_width).0)
-                    })
-                    .sum::<f32>();
-
-                let right_point = section
-                    .right_lanes
-                    .values()
-                    .map(|lane| {
-                        let (s_width, width) =
-                            lane.width.range(..=road_s - s_section).next_back().unwrap();
-
-                        width.eval((road_s - s_section - s_width).0)
-                    })
-                    .sum::<f32>();
-
-                let left_point = transform.translation + transform.left() * left_point;
-                let right_point = transform.translation + transform.right() * right_point;
-
-                [left_point, right_point]
-            })
-            .collect::<Vec<_>>();
+        positions.extend_from_slice(&self.maxima(self.length));
 
         let normals = (0..positions.len() as u32)
             .map(|_| Vec3::Y)
