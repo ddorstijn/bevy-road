@@ -22,6 +22,24 @@ pub enum GeometryType {
     },
 }
 
+impl GeometryType {
+    pub fn new_spiral(k_start: f32, k_end: f32, length: f32) -> Self {
+        let dk = (k_end - k_start) / length;
+        let s_offset = k_start / dk;
+        let (x_offset, y_offset, a_offset) = odr_spiral(s_offset, dk);
+
+        Self::Spiral {
+            k_start,
+            k_end,
+            dk,
+            s_offset,
+            x_offset,
+            y_offset,
+            a_offset,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Geometry {
     pub s: f32,

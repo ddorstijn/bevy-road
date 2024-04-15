@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 bevy = "0.13"
 bevy_road-core = { path = "../bevy_road-core" }
+ordered-float = "4.2.0"

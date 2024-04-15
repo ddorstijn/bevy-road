@@ -1,5 +1,12 @@
+use std::collections::BTreeMap;
+
 use bevy::{input::common_conditions::input_just_pressed, prelude::*, window::PrimaryWindow};
 use bevy_road_core::geometry::{Geometry, GeometryType};
+use ordered_float::OrderedFloat;
+
+const CURVATURE: f32 = 0.5;
+const RADIUS: f32 = 1.0 / CURVATURE;
+const L_S: f32 = 0.5;
 
 pub struct BuilderPlugin;
 impl Plugin for BuilderPlugin {
@@ -11,9 +18,34 @@ impl Plugin for BuilderPlugin {
                     change_level,
                     insert_point.run_if(input_just_pressed(MouseButton::Left)),
                     debug_spline_points,
+                    display_spline,
                 ),
             )
             .add_systems(FixedUpdate, regenerate_curves);
+    }
+}
+
+fn display_spline(splines: Query<&RoadSpline>, mut gizmos: Gizmos) {
+    for spline in &splines {
+        for (s, geom) in spline.geometry.iter() {
+            let steps = geom.length.ceil() * 10.0;
+            let step_size = geom.length / steps;
+            let points = (0..=steps as u32)
+                .map(|step| {
+                    let (x, y, _) = geom.interpolate(**s + step_size * step as f32);
+                    Vec3::new(x, 0.0, -y)
+                })
+                .collect::<Vec<_>>();
+
+            gizmos.linestrip(
+                points,
+                match geom.r#type {
+                    GeometryType::Line => Color::BLACK,
+                    GeometryType::Arc { .. } => Color::LIME_GREEN,
+                    GeometryType::Spiral { .. } => Color::CYAN,
+                },
+            );
+        }
     }
 }
 
@@ -23,7 +55,7 @@ struct Elevation(f32);
 #[derive(Component, Default, Debug)]
 struct RoadSpline {
     points: Vec<Vec3>,
-    geometry: Vec<Geometry>,
+    geometry: BTreeMap<OrderedFloat<f32>, Geometry>,
     // road_id: u32,
 }
 
@@ -43,18 +75,104 @@ impl RoadSpline {
             let p1 = Vec2::new(self.points[0].x, -self.points[0].z);
             let p2 = Vec2::new(self.points[1].x, -self.points[1].z);
 
-            self.geometry.push(Geometry {
-                hdg: (p2 - p1).to_angle(),
-                s: 0.0,
-                length: p1.distance(p2),
-                x: p1.x,
-                y: p1.y,
-                r#type: GeometryType::Line,
-            });
+            self.geometry.insert(
+                OrderedFloat(0.0),
+                Geometry {
+                    hdg: (p2 - p1).to_angle(),
+                    s: 0.0,
+                    length: p1.distance(p2),
+                    x: p1.x,
+                    y: p1.y,
+                    r#type: GeometryType::Line,
+                },
+            );
         }
 
         if self.points.len() > 2 {
+            let mut p1: Vec2 = Vec2::new(self.points[0].x, -self.points[0].z);
+
             // Combination of straights with curves
+            self.points.windows(3).for_each(|s| {
+                let [_, p2, p3] = s else { return };
+
+                let p2 = Vec2::new(p2.x, -p2.z);
+                let p3 = Vec2::new(p3.x, -p3.z);
+
+                let v1 = p2 - p1;
+                let v2 = p3 - p2;
+
+                let angle = v1.angle_between(v2).abs();
+                let ts = 0.5 * L_S + (RADIUS + L_S.powi(2) / 24.0 * RADIUS) * (angle * 0.5).tan();
+                let arc_length = (angle - 2.0 * (L_S.powi(2) / (2. * RADIUS * L_S))) * RADIUS;
+
+                let twist = v1.perp_dot(v2).signum();
+                let k = CURVATURE * twist;
+
+                let l_in = Geometry {
+                    s: 0.0,
+                    hdg: v1.to_angle(),
+                    x: p1.x,
+                    y: p1.y,
+                    length: v1.length() - ts,
+                    r#type: GeometryType::Line,
+                };
+
+                let (x, y, hdg) = l_in.interpolate(l_in.length);
+
+                let s_in = Geometry {
+                    s: l_in.s + l_in.length,
+                    hdg,
+                    length: L_S,
+                    x,
+                    y,
+                    r#type: GeometryType::new_spiral(0.0, k, L_S),
+                };
+
+                let (x, y, hdg) = s_in.interpolate(s_in.s + s_in.length);
+
+                let a_c = Geometry {
+                    s: s_in.s + s_in.length,
+                    hdg,
+                    length: arc_length,
+                    x,
+                    y,
+                    r#type: GeometryType::Arc { k },
+                };
+
+                let (x, y, hdg) = a_c.interpolate(a_c.s + a_c.length);
+
+                let s_out = Geometry {
+                    s: a_c.s + a_c.length,
+                    hdg,
+                    length: L_S,
+                    x,
+                    y,
+                    r#type: GeometryType::new_spiral(k, 0.0, L_S),
+                };
+
+                p1 = p2 + v2.normalize() * ts;
+
+                self.geometry.insert(OrderedFloat(l_in.s), l_in);
+                self.geometry.insert(OrderedFloat(s_in.s), s_in);
+                self.geometry.insert(OrderedFloat(a_c.s), a_c);
+                self.geometry.insert(OrderedFloat(s_out.s), s_out);
+            });
+
+            let last_point = self.points.last().unwrap();
+            let last_geom = self.geometry.iter().rev().next().unwrap().1;
+            let p2 = Vec2::new(last_point.x, -last_point.z);
+            let v2 = p2 - p1;
+
+            let l_out = Geometry {
+                s: last_geom.s + last_geom.length,
+                hdg: v2.to_angle(),
+                x: p1.x,
+                y: p1.y,
+                length: v2.length(),
+                r#type: GeometryType::Line,
+            };
+
+            self.geometry.insert(OrderedFloat(l_out.s), l_out);
         }
     }
 }
