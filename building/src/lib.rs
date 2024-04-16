@@ -103,7 +103,7 @@ impl RoadSpline {
 
                 let angle = v1.angle_between(v2).abs();
                 let ts = 0.5 * L_S + (RADIUS + L_S.powi(2) / 24.0 * RADIUS) * (angle * 0.5).tan();
-                let arc_length = (angle - 2.0 * (L_S.powi(2) / (2. * RADIUS * L_S))) * RADIUS;
+                let arc_length = (angle - L_S / RADIUS) * RADIUS;
 
                 let twist = v1.perp_dot(v2).signum();
                 let k = CURVATURE * twist;
