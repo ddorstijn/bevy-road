@@ -52,17 +52,17 @@ pub struct Geometry {
 }
 
 impl Geometry {
-    pub fn interpolate(&self, s: f32) -> (f32, f32, f32) {
+    pub fn interpolate(&self, rel_s: f32) -> (f32, f32, f32) {
         match &self.r#type {
             GeometryType::Line => {
                 let (sin_hdg, cos_hdg) = self.hdg.sin_cos();
-                let x = (cos_hdg * (s - self.s)) + self.x;
-                let y = (sin_hdg * (s - self.s)) + self.y;
+                let x = (cos_hdg * rel_s) + self.x;
+                let y = (sin_hdg * rel_s) + self.y;
 
                 (x, y, self.hdg)
             }
             GeometryType::Arc { k } => {
-                let hdg = self.hdg + (s - self.s) * k;
+                let hdg = self.hdg + rel_s * k;
                 let o_hdg = hdg - PI * 0.5;
                 let r = k.recip();
                 let x = r * (o_hdg.cos() - self.hdg.sin()) + self.x;
@@ -78,7 +78,7 @@ impl Geometry {
                 a_offset,
                 ..
             } => {
-                let (xs_spiral, ys_spiral, as_spiral) = odr_spiral(s - self.s + s_offset, *dk);
+                let (xs_spiral, ys_spiral, as_spiral) = odr_spiral(rel_s + s_offset, *dk);
                 let hdg = self.hdg - a_offset;
                 let x_spiral = xs_spiral - x_offset;
                 let y_spiral = ys_spiral - y_offset;

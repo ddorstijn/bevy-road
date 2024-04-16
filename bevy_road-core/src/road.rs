@@ -83,13 +83,8 @@ impl From<&opendrive::road::Road> for Road {
 
 impl Road {
     pub fn interpolate(&self, s: OrderedFloat<f32>) -> (f32, f32, f32, f32) {
-        let (x, y, hdg) = self
-            .reference_line
-            .range(..=s)
-            .next_back()
-            .unwrap()
-            .1
-            .interpolate(*s);
+        let geom = self.reference_line.range(..=s).next_back().unwrap().1;
+        let (x, y, hdg) = geom.interpolate(*s - geom.s);
 
         let z = self
             .elevation

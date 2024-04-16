@@ -27,12 +27,12 @@ impl Plugin for BuilderPlugin {
 
 fn display_spline(splines: Query<&RoadSpline>, mut gizmos: Gizmos) {
     for spline in &splines {
-        for (s, geom) in spline.geometry.iter() {
+        for geom in spline.geometry.values() {
             let steps = geom.length.ceil() * 10.0;
             let step_size = geom.length / steps;
             let points = (0..=steps as u32)
                 .map(|step| {
-                    let (x, y, _) = geom.interpolate(**s + step_size * step as f32);
+                    let (x, y, _) = geom.interpolate(step_size * step as f32);
                     Vec3::new(x, 0.0, -y)
                 })
                 .collect::<Vec<_>>();
@@ -128,7 +128,7 @@ impl RoadSpline {
                     r#type: GeometryType::new_spiral(0.0, k, L_S),
                 };
 
-                let (x, y, hdg) = s_in.interpolate(s_in.s + s_in.length);
+                let (x, y, hdg) = s_in.interpolate(s_in.length);
 
                 let a_c = Geometry {
                     s: s_in.s + s_in.length,
@@ -139,7 +139,7 @@ impl RoadSpline {
                     r#type: GeometryType::Arc { k },
                 };
 
-                let (x, y, hdg) = a_c.interpolate(a_c.s + a_c.length);
+                let (x, y, hdg) = a_c.interpolate(a_c.length);
 
                 let s_out = Geometry {
                     s: a_c.s + a_c.length,
@@ -151,6 +151,9 @@ impl RoadSpline {
                 };
 
                 p1 = p2 + v2.normalize() * ts;
+
+                let (x, y, _) = s_out.interpolate(s_out.length);
+                println!("Error: {}", p1.distance(Vec2::new(x, y)));
 
                 self.geometry.insert(OrderedFloat(l_in.s), l_in);
                 self.geometry.insert(OrderedFloat(s_in.s), s_in);
@@ -172,7 +175,7 @@ impl RoadSpline {
                 r#type: GeometryType::Line,
             };
 
-            self.geometry.insert(OrderedFloat(l_out.s), l_out);
+            self.geometry.insert(OrderedFloat(99999.), l_out);
         }
     }
 }
