@@ -27,25 +27,26 @@ impl Plugin for BuilderPlugin {
 
 fn display_spline(splines: Query<&RoadSpline>, mut gizmos: Gizmos) {
     for spline in &splines {
-        for geom in spline.geometry.values() {
-            let steps = geom.length.ceil() * 10.0;
-            let step_size = geom.length / steps;
-            let points = (0..=steps as u32)
-                .map(|step| {
-                    let (x, y, _) = geom.interpolate(step_size * step as f32);
-                    Vec3::new(x, 0.0, -y)
-                })
-                .collect::<Vec<_>>();
+        let mut positions: Vec<Vec3> = spline
+            .geometry
+            .values()
+            .flat_map(|g| match g.r#type {
+                GeometryType::Line => vec![Vec3::new(g.x, 0.0, -g.y)],
+                _ => {
+                    let steps = g.length.round() * 10.;
+                    let step_size = g.length / steps;
+                    (0..=steps as u32)
+                        .map(|step| {
+                            let (x, y, _) = g.interpolate(step_size * step as f32);
+                            Vec3::new(x, 0.0, -y)
+                        })
+                        .collect::<Vec<Vec3>>()
+                }
+            })
+            .collect();
 
-            gizmos.linestrip(
-                points,
-                match geom.r#type {
-                    GeometryType::Line => Color::BLACK,
-                    GeometryType::Arc { .. } => Color::LIME_GREEN,
-                    GeometryType::Spiral { .. } => Color::CYAN,
-                },
-            );
-        }
+        positions.push(spline.points.last().unwrap().clone());
+        gizmos.linestrip(positions, Color::CYAN);
     }
 }
 
@@ -100,31 +101,32 @@ impl RoadSpline {
 
                 let v1 = p2 - p1;
                 let v2 = p3 - p2;
+                let v1_heading = v1.to_angle();
 
                 let angle = v1.angle_between(v2).abs();
-                let ts = 0.5 * L_S + (RADIUS + L_S.powi(2) / 24.0 * RADIUS) * (angle * 0.5).tan();
                 let arc_length = (angle - L_S / RADIUS) * RADIUS;
+
+                let ts = 0.5 * L_S + (RADIUS + L_S.powi(2) / 24.0 * RADIUS) * (angle * 0.5).tan();
 
                 let twist = v1.perp_dot(v2).signum();
                 let k = CURVATURE * twist;
 
                 let l_in = Geometry {
                     s: 0.0,
-                    hdg: v1.to_angle(),
+                    hdg: v1_heading,
                     x: p1.x,
                     y: p1.y,
                     length: v1.length() - ts,
                     r#type: GeometryType::Line,
                 };
 
-                let (x, y, hdg) = l_in.interpolate(l_in.length);
-
+                let ts_station = p2 - v1.normalize() * ts;
                 let s_in = Geometry {
                     s: l_in.s + l_in.length,
-                    hdg,
+                    hdg: v1_heading,
                     length: L_S,
-                    x,
-                    y,
+                    x: ts_station.x,
+                    y: ts_station.y,
                     r#type: GeometryType::new_spiral(0.0, k, L_S),
                 };
 
