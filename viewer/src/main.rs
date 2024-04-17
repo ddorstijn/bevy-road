@@ -9,13 +9,10 @@ use bevy::{
         RenderPlugin,
     },
 };
+use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use building::BuilderPlugin;
 use debug::DebugPlugin;
 use road::RoadPlugin;
-use smooth_bevy_cameras::{
-    controllers::unreal::{UnrealCameraBundle, UnrealCameraController, UnrealCameraPlugin},
-    LookTransformPlugin,
-};
 use states::GameStatePlugin;
 
 pub(self) mod debug;
@@ -32,8 +29,7 @@ fn main() {
                 }),
                 ..default()
             }),
-            LookTransformPlugin,
-            UnrealCameraPlugin::default(),
+            PanOrbitCameraPlugin,
             WireframePlugin,
         ))
         .insert_resource(WireframeConfig {
@@ -50,12 +46,10 @@ fn setup_world(mut commands: Commands) {
     // Environment and player
     commands
         .spawn((Camera3dBundle::default(), Name::new("Player")))
-        .insert(UnrealCameraBundle::new(
-            UnrealCameraController::default(),
-            Vec3::new(0.0, 50.0, 0.0),
-            Vec3::ZERO,
-            Vec3::Y,
-        ));
+        .insert(PanOrbitCamera {
+            radius: Some(50.0),
+            ..default()
+        });
 
     commands.spawn((
         DirectionalLightBundle {

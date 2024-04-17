@@ -9,10 +9,6 @@ use bevy::{
 use bevy_road_core::geometry::{Geometry, GeometryType};
 use ordered_float::OrderedFloat;
 
-const CURVATURE: f64 = 5e-3;
-const RADIUS: f64 = 1.0 / CURVATURE;
-const L_S: f64 = 25.;
-
 pub struct BuilderPlugin;
 impl Plugin for BuilderPlugin {
     fn build(&self, app: &mut App) {
@@ -42,9 +38,15 @@ fn spawn_curve(mut commands: Commands) {
         SpatialBundle::default(),
         RoadSpline {
             points: vec![
-                DVec3::new(0.0, 0.0, 0.0),
-                DVec3::new(500.0, 0.0, 0.0),
-                DVec3::new(500.0, 0.0, 500.0),
+                SplinePoint::default(),
+                SplinePoint {
+                    position: DVec3::new(500.0, 0.0, 0.0),
+                    ..default()
+                },
+                SplinePoint {
+                    position: DVec3::new(500.0, 0.0, 500.0),
+                    ..default()
+                },
             ],
             ..default()
         },
@@ -85,7 +87,7 @@ fn change_radius(
 
     for (_, spline) in &mut active_spline {
         spline.geometry.values().for_each(|g| match g.r#type {
-            GeometryType::Arc { mut k } => {
+            GeometryType::Arc { k } => {
                 let radius = k.recip();
                 let recipient = g.hdg + std::f64::consts::PI / 2.0;
 
@@ -160,9 +162,26 @@ fn display_spline(splines: Query<&RoadSpline>, mut gizmos: Gizmos) {
 #[derive(Resource, Default, Reflect)]
 struct Elevation(f64);
 
+#[derive(Debug)]
+struct SplinePoint {
+    position: DVec3,
+    radius: f64,
+    transition_length: f64,
+}
+
+impl Default for SplinePoint {
+    fn default() -> Self {
+        Self {
+            position: DVec3::ZERO,
+            radius: 20.0,
+            transition_length: 25.0,
+        }
+    }
+}
+
 #[derive(Component, Default, Debug)]
 struct RoadSpline {
-    points: Vec<DVec3>,
+    points: Vec<SplinePoint>,
     length: f64,
     geometry: BTreeMap<OrderedFloat<f64>, Geometry>,
     // road_id: u32,
@@ -182,8 +201,8 @@ impl RoadSpline {
 
         if self.points.len() == 2 {
             // Straight road
-            let p1 = DVec2::new(self.points[0].x, -self.points[0].z);
-            let p2 = DVec2::new(self.points[1].x, -self.points[1].z);
+            let p1 = DVec2::new(self.points[0].position.x, -self.points[0].position.z);
+            let p2 = DVec2::new(self.points[1].position.x, -self.points[1].position.z);
             self.length = p1.distance(p2);
 
             self.geometry.insert(
@@ -200,26 +219,30 @@ impl RoadSpline {
         }
 
         if self.points.len() > 2 {
-            let mut p1 = DVec2::new(self.points[0].x, -self.points[0].z);
+            let mut p1 = DVec2::new(self.points[0].position.x, -self.points[0].position.z);
 
             // Combination of straights with curves
             self.points.windows(3).for_each(|s| {
                 let [_, p2, p3] = s else { return };
 
-                let p2 = DVec2::new(p2.x, -p2.z);
-                let p3 = DVec2::new(p3.x, -p3.z);
+                let radius = p2.radius;
+                let curvature = radius.recip();
+                let transition_length = p2.transition_length;
+
+                let p2 = DVec2::new(p2.position.x, -p2.position.z);
+                let p3 = DVec2::new(p3.position.x, -p3.position.z);
 
                 let v1 = p2 - p1;
                 let v2 = p3 - p2;
                 let v1_heading = v1.to_angle();
 
                 let angle = v1.angle_between(v2).abs();
-                let shift = L_S.powi(2) / (24.0 * RADIUS);
-                let ts = L_S / 2.0 + (RADIUS + shift) * (angle / 2.0).tan();
+                let shift = transition_length.powi(2) / (24.0 * radius);
+                let ts = transition_length / 2.0 + (radius + shift) * (angle / 2.0).tan();
                 let ts_station = p2 - v1.normalize() * ts;
 
                 let twist = v1.perp_dot(v2).signum();
-                let k = CURVATURE * twist;
+                let k = curvature * twist;
 
                 let l_in = Geometry {
                     s: self.length,
@@ -234,20 +257,20 @@ impl RoadSpline {
                 let s_in = Geometry {
                     s: l_in.s + l_in.length,
                     hdg: v1_heading,
-                    length: L_S,
+                    length: transition_length,
                     x: ts_station.x,
                     y: ts_station.y,
-                    r#type: GeometryType::new_spiral(0.0, k, L_S),
+                    r#type: GeometryType::new_spiral(0.0, k, transition_length),
                 };
                 self.length += s_in.length;
 
                 let (x, y, hdg) = s_in.interpolate(s_in.length);
-                let spiral_angle = L_S / (2.0 * RADIUS);
+                let spiral_angle = transition_length / (2.0 * radius);
                 let arc_angle = angle - 2.0 * spiral_angle;
                 let a_c = Geometry {
                     s: s_in.s + s_in.length,
                     hdg,
-                    length: arc_angle * RADIUS,
+                    length: arc_angle * radius,
                     x,
                     y,
                     r#type: GeometryType::Arc { k },
@@ -259,10 +282,10 @@ impl RoadSpline {
                 let s_out = Geometry {
                     s: a_c.s + a_c.length,
                     hdg,
-                    length: L_S,
+                    length: transition_length,
                     x,
                     y,
-                    r#type: GeometryType::new_spiral(k, 0.0, L_S),
+                    r#type: GeometryType::new_spiral(k, 0.0, transition_length),
                 };
 
                 self.length += s_out.length;
@@ -276,7 +299,7 @@ impl RoadSpline {
             });
 
             let last_point = self.points.last().unwrap();
-            let p2 = DVec2::new(last_point.x, -last_point.z);
+            let p2 = DVec2::new(last_point.position.x, -last_point.position.z);
             let v2 = p2 - p1;
 
             let l_out = Geometry {
@@ -321,7 +344,10 @@ fn update_point(
     let p = ray.get_point(-ray.origin.y / ray.direction.y);
 
     for (_, mut spline) in &mut active_spline {
-        *spline.points.last_mut().unwrap() = DVec3::new(p.x as f64, 0.0, p.z as f64);
+        *spline.points.last_mut().unwrap() = SplinePoint {
+            position: DVec3::new(p.x as f64, 0.0, p.z as f64),
+            ..default()
+        };
     }
 }
 
@@ -353,14 +379,20 @@ fn insert_point(
         commands.spawn((
             SpatialBundle::default(),
             RoadSpline {
-                points: vec![p],
+                points: vec![SplinePoint {
+                    position: p,
+                    ..default()
+                }],
                 ..default()
             },
             ActiveSpline,
         ));
     } else {
         for (_, mut spline) in &mut active_spline {
-            spline.points.push(p);
+            spline.points.push(SplinePoint {
+                position: p,
+                ..default()
+            });
         }
     }
 }
@@ -379,7 +411,8 @@ fn debug_spline_points(
     for spline in &inactive_splines {
         for pos in &spline.points {
             gizmos.cuboid(
-                Transform::from_xyz(pos.x as f32, 0.0, pos.z as f32).with_scale(Vec3::splat(0.1)),
+                Transform::from_xyz(pos.position.x as f32, 0.0, pos.position.z as f32)
+                    .with_scale(Vec3::splat(0.1)),
                 Color::GRAY,
             );
         }
@@ -388,7 +421,8 @@ fn debug_spline_points(
     for spline in &active_splines {
         for pos in &spline.points {
             gizmos.cuboid(
-                Transform::from_xyz(pos.x as f32, 0.0, pos.z as f32).with_scale(Vec3::splat(0.1)),
+                Transform::from_xyz(pos.position.x as f32, 0.0, pos.position.z as f32)
+                    .with_scale(Vec3::splat(0.1)),
                 Color::GREEN,
             );
         }
