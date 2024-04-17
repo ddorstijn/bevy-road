@@ -52,8 +52,8 @@ fn setup_world(mut commands: Commands) {
         .spawn((Camera3dBundle::default(), Name::new("Player")))
         .insert(UnrealCameraBundle::new(
             UnrealCameraController::default(),
-            Vec3::new(-2.0, 5.0, 5.0),
-            Vec3::new(0., 0., 0.),
+            Vec3::new(0.0, 50.0, 0.0),
+            Vec3::ZERO,
             Vec3::Y,
         ));
 

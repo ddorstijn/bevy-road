@@ -9,5 +9,5 @@ pub struct Arc {
     /// Constant curvature throughout the element
     #[serde(rename = "@curvature")]
     #[serde(deserialize_with = "deserialize_scientific")]
-    pub curvature: f32,
+    pub curvature: f64,
 }

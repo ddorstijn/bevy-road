@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct ExplicitLine {
     /// Length of the visible line
     #[serde(rename = "@length")]
-    pub length: f32,
+    pub length: f64,
     /// Rule that must be observed when passing the line from inside, that is, from the lane with
     /// the lower absolute ID to the lane with the higher absolute ID
     #[serde(rename = "@rule")]
@@ -13,12 +13,12 @@ pub struct ExplicitLine {
     /// Offset of start position of the `<line>` element, relative to the @sOffset  given in the
     /// `<roadMark>` element
     #[serde(rename = "@sOffset")]
-    pub s_offset: f32,
+    pub s_offset: f64,
     /// Lateral offset from the lane border. If `<sway>` element is present, the lateral offset
     /// follows the sway.
     #[serde(rename = "@tOffset")]
-    pub t_offset: f32,
+    pub t_offset: f64,
     /// Line width. This attribute supersedes the definition in the `<roadMark>` element.
     #[serde(rename = "@width")]
-    pub width: Option<f32>,
+    pub width: Option<f64>,
 }

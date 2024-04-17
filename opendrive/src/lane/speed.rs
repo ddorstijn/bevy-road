@@ -7,11 +7,11 @@ use serde::{Deserialize, Serialize};
 pub struct Speed {
     /// Maximum allowed speed. If the attribute unit is not specified, m/s is used as default.
     #[serde(rename = "@max")]
-    pub max: f32,
+    pub max: f64,
     /// s-coordinate of start position, relative to the position of the preceding `<laneSection>`
     /// element
     #[serde(rename = "@sOffset")]
-    pub s_offset: f32,
+    pub s_offset: f64,
     /// Unit of the attribute max
     #[serde(rename = "@unit")]
     pub unit: Option<SpeedUnit>,

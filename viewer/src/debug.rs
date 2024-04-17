@@ -50,8 +50,8 @@ fn draw_reference_line(roads: Query<&Road>, mut gizmos: Gizmos<DebugGizmos>) {
         let step_size = road.length / steps;
         let positions = (0..=steps as u32)
             .map(|step| {
-                let (x, neg_z, y, _) = road.interpolate(step_size * step as f32);
-                Vec3::new(x, y, -neg_z)
+                let (x, neg_z, y, _) = road.interpolate(step_size * step as f64);
+                Vec3::new(x as f32, y as f32, -neg_z as f32)
             })
             .collect::<Vec<_>>();
 
@@ -84,8 +84,8 @@ fn debug_heading(mut gizmos: Gizmos<DebugGizmos>, road: Query<&Road>) {
             sum_length += rl.length;
             let (x, neg_z, y, hdg) = road.interpolate(sum_length);
 
-            let p = Vec3::new(x, y, -neg_z);
-            let h = Vec3::new(hdg.cos(), 0.0, -hdg.sin());
+            let p = Vec3::new(x as f32, y as f32, -neg_z as f32);
+            let h = Vec3::new(hdg.cos() as f32, 0.0, -hdg.sin() as f32);
             gizmos.arrow(p, p + h * 5.0, Color::CYAN);
         }
     }
@@ -102,7 +102,7 @@ fn update_speed(mut offset: ResMut<CarOffset>, keys: Res<ButtonInput<KeyCode>>) 
 }
 
 #[derive(Resource)]
-struct CarOffset(f32);
+struct CarOffset(f64);
 
 impl Default for CarOffset {
     fn default() -> Self {
@@ -118,11 +118,11 @@ fn move_car(
 ) {
     for road in &road {
         let (x, neg_z, y, hdg) = road.interpolate(OrderedFloat(
-            (car_offset.0 + 4.0 * time.elapsed_seconds_wrapped()).rem_euclid(*road.length),
+            (car_offset.0 + 4.0 * time.elapsed_seconds_wrapped() as f64).rem_euclid(*road.length),
         ));
 
-        let p = Vec3::new(x, y, -neg_z);
-        let h = Vec3::new(hdg.cos(), 0.0, -hdg.sin());
+        let p = Vec3::new(x as f32, y as f32, -neg_z as f32);
+        let h = Vec3::new(hdg.cos() as f32, 0.0, -hdg.sin() as f32);
         gizmos.arrow(p, p + h * 4.0, Color::YELLOW);
     }
 }

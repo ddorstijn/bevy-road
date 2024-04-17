@@ -13,5 +13,5 @@ pub struct Type {
     /// sum of all @width of `<line>` elements and spaces in between, necessary to form the road
     /// mark. This attribute supersedes the definition in the `<roadMark>` element.
     #[serde(rename = "@width")]
-    pub width: f32,
+    pub width: f64,
 }

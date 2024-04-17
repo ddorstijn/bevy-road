@@ -24,11 +24,11 @@
    the interpretation of OpenDRIVE spiral data.
 */
 
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
 /* S(x) for small x */
 // SINE_NUMERATOR
-const SN: [f32; 6] = [
+const SN: [f64; 6] = [
     -2.99181919401019853726e3,
     7.08840045257738576863e5,
     -6.29741486205862506537e7,
@@ -37,7 +37,7 @@ const SN: [f32; 6] = [
     3.18016297876567817986e11,
 ];
 // SINE_DENOMINATOR
-const SD: [f32; 6] = [
+const SD: [f64; 6] = [
     2.81376268889994315696e2,
     4.55847810806532581675e4,
     5.17343888770096400730e6,
@@ -48,7 +48,7 @@ const SD: [f32; 6] = [
 
 /* C(x) for small x */
 // COSINE_NUMERATOR
-const CN: [f32; 6] = [
+const CN: [f64; 6] = [
     -4.98843114573573548651e-8,
     9.50428062829859605134e-6,
     -6.45191435683965050962e-4,
@@ -57,7 +57,7 @@ const CN: [f32; 6] = [
     9.99999999999999998822e-1,
 ];
 // COSINE_DENOMINATOR
-const CD: [f32; 7] = [
+const CD: [f64; 7] = [
     3.99982968972495980367e-12,
     9.15439215774657478799e-10,
     1.25001862479598821474e-7,
@@ -69,7 +69,7 @@ const CD: [f32; 7] = [
 
 /* Auxiliary function f(x) */
 // FRESNEL_F_NUMERATOR
-const FN: [f32; 10] = [
+const FN: [f64; 10] = [
     4.21543555043677546506e-1,
     1.43407919780758885261e-1,
     1.15220955073585758835e-2,
@@ -82,7 +82,7 @@ const FN: [f32; 10] = [
     3.76329711269987889006e-20,
 ];
 // FRESNEL_F_DENOMINATOR
-const FD: [f32; 10] = [
+const FD: [f64; 10] = [
     7.51586398353378947175e-1,
     1.16888925859191382142e-1,
     6.44051526508858611005e-3,
@@ -97,7 +97,7 @@ const FD: [f32; 10] = [
 
 /* Auxiliary function g(x) */
 // FRESNEL_G_NUMERATOR
-const GN: [f32; 11] = [
+const GN: [f64; 11] = [
     5.04442073643383265887e-1,
     1.97102833525523411709e-1,
     1.87648584092575249293e-2,
@@ -111,7 +111,7 @@ const GN: [f32; 11] = [
     1.86958710162783235106e-22,
 ];
 // FRESNEL_G_DENOMINATOR
-const GD: [f32; 11] = [
+const GD: [f64; 11] = [
     1.47495759925128324529e0,
     3.37748989120019970451e-1,
     2.53603741420338795122e-2,
@@ -125,11 +125,11 @@ const GD: [f32; 11] = [
     1.86958710162783236342e-22,
 ];
 
-fn poly_eval(x: f32, coefs: &[f32], init: f32) -> f32 {
+fn poly_eval(x: f64, coefs: &[f64], init: f64) -> f64 {
     coefs.iter().fold(init, |acc, &c| acc * x + c)
 }
 
-fn fresnel(x: f32) -> (f32, f32) {
+fn fresnel(x: f64) -> (f64, f64) {
     let xa = x.abs();
     let xsq = xa.powi(2);
 
@@ -164,7 +164,7 @@ fn fresnel(x: f32) -> (f32, f32) {
  * @param s     run-length along the spiral
  * @param dk    first derivative of curvature (1/m2)
  */
-pub fn odr_spiral(s: f32, dk: f32) -> (f32, f32, f32) {
+pub fn odr_spiral(s: f64, dk: f64) -> (f64, f64, f64) {
     let a = dk.abs().sqrt().recip() * PI.sqrt();
     let t_ang = s.powi(2) * dk * 0.5;
 

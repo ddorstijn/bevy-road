@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
 use self::odr_spiral::odr_spiral;
 
@@ -8,22 +8,22 @@ mod odr_spiral;
 pub enum GeometryType {
     Line,
     Arc {
-        k: f32,
+        k: f64,
     },
     Spiral {
-        k_start: f32,
-        k_end: f32,
+        k_start: f64,
+        k_end: f64,
 
-        dk: f32,
-        s_offset: f32,
-        x_offset: f32,
-        y_offset: f32,
-        a_offset: f32,
+        dk: f64,
+        s_offset: f64,
+        x_offset: f64,
+        y_offset: f64,
+        a_offset: f64,
     },
 }
 
 impl GeometryType {
-    pub fn new_spiral(k_start: f32, k_end: f32, length: f32) -> Self {
+    pub fn new_spiral(k_start: f64, k_end: f64, length: f64) -> Self {
         let dk = (k_end - k_start) / length;
         let s_offset = k_start / dk;
         let (x_offset, y_offset, a_offset) = odr_spiral(s_offset, dk);
@@ -42,17 +42,17 @@ impl GeometryType {
 
 #[derive(Debug, Clone)]
 pub struct Geometry {
-    pub s: f32,
-    pub hdg: f32,
-    pub length: f32,
-    pub x: f32,
-    pub y: f32,
+    pub s: f64,
+    pub hdg: f64,
+    pub length: f64,
+    pub x: f64,
+    pub y: f64,
 
     pub r#type: GeometryType,
 }
 
 impl Geometry {
-    pub fn interpolate(&self, rel_s: f32) -> (f32, f32, f32) {
+    pub fn interpolate(&self, rel_s: f64) -> (f64, f64, f64) {
         match &self.r#type {
             GeometryType::Line => {
                 let (sin_hdg, cos_hdg) = self.hdg.sin_cos();

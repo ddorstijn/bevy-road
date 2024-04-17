@@ -29,7 +29,7 @@ pub struct RoadMark {
     pub color: color::Color,
     /// Height of road mark above the road, i.e. thickness of the road mark
     #[serde(rename = "@height")]
-    pub height: Option<f32>,
+    pub height: Option<f64>,
     /// Allows a lane change in the indicated direction, taking into account that lanes are numbered
     /// in ascending order from right to left. If the attribute is missing, “both” is used as
     /// default.
@@ -43,7 +43,7 @@ pub struct RoadMark {
     /// s-coordinate of start position of the `<roadMark>` element, relative to the position of the
     /// preceding `<laneSection>` element
     #[serde(rename = "@sOffset")]
-    pub s_offset: f32,
+    pub s_offset: f64,
     /// Type of the road mark
     #[serde(rename = "@type")]
     pub type_simplified: TypeSimplified,
@@ -53,5 +53,5 @@ pub struct RoadMark {
     /// Width of the road mark. This attribute is optional if detailed definition is given by
     /// <line> element.
     #[serde(rename = "@width")]
-    pub width: Option<f32>,
+    pub width: Option<f64>,
 }

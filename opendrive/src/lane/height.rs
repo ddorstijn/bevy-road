@@ -8,12 +8,12 @@ use serde::{Deserialize, Serialize};
 pub struct Height {
     /// Inner offset from road level
     #[serde(rename = "@inner")]
-    pub inner: f32,
+    pub inner: f64,
     /// Outer offset from road level
     #[serde(rename = "@outer")]
-    pub outer: f32,
+    pub outer: f64,
     /// s-coordinate of start position, relative to the position of the preceding `<laneSection>`
     /// element
     #[serde(rename = "@sOffset")]
-    pub s_offset: f32,
+    pub s_offset: f64,
 }

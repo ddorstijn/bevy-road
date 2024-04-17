@@ -20,5 +20,5 @@ pub struct Access {
     /// s-coordinate of start position, relative to the position of the preceding `<laneSection>`
     /// element
     #[serde(rename = "@sOffset")]
-    pub s_offset: f32,
+    pub s_offset: f64,
 }

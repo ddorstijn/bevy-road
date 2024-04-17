@@ -6,18 +6,18 @@ use serde::{Deserialize, Serialize};
 pub struct Width {
     /// Polynom parameter a, width at @s (ds=0)
     #[serde(rename = "@a")]
-    pub a: f32,
+    pub a: f64,
     /// Polynom parameter b
     #[serde(rename = "@b")]
-    pub b: f32,
+    pub b: f64,
     /// Polynom parameter c
     #[serde(rename = "@c")]
-    pub c: f32,
+    pub c: f64,
     /// Polynom parameter d
     #[serde(rename = "@d")]
-    pub d: f32,
+    pub d: f64,
     /// s-coordinate of start position of the `<width>` element, relative to the position of the
     /// preceding `<laneSection>` element
     #[serde(rename = "@sOffset")]
-    pub s_offset: f32,
+    pub s_offset: f64,
 }

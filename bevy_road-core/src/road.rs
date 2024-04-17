@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, f32::consts::PI};
+use std::{collections::BTreeMap, f64::consts::PI};
 
 use crate::{
     geometry::{Geometry, GeometryType},
@@ -11,11 +11,11 @@ use ordered_float::OrderedFloat;
 
 #[derive(Component, Debug, Default)]
 pub struct Road {
-    pub length: OrderedFloat<f32>,
-    pub offset: BTreeMap<OrderedFloat<f32>, Polynomal>,
-    pub elevation: BTreeMap<OrderedFloat<f32>, Polynomal>,
-    pub sections: BTreeMap<OrderedFloat<f32>, LaneSection>,
-    pub reference_line: BTreeMap<OrderedFloat<f32>, Geometry>,
+    pub length: OrderedFloat<f64>,
+    pub offset: BTreeMap<OrderedFloat<f64>, Polynomal>,
+    pub elevation: BTreeMap<OrderedFloat<f64>, Polynomal>,
+    pub sections: BTreeMap<OrderedFloat<f64>, LaneSection>,
+    pub reference_line: BTreeMap<OrderedFloat<f64>, Geometry>,
     pub predecessor: Option<u32>,
     pub sucessor: Option<u32>,
 }
@@ -28,7 +28,7 @@ impl From<&opendrive::road::Road> for Road {
             .iter()
             .map(|o| {
                 (
-                    OrderedFloat::<f32>::from(o.s),
+                    OrderedFloat::<f64>::from(o.s),
                     Polynomal::new(o.a, o.b, o.c, o.d),
                 )
             })
@@ -51,14 +51,14 @@ impl From<&opendrive::road::Road> for Road {
             .lanes
             .lane_section
             .iter()
-            .map(|ls| (OrderedFloat::<f32>::from(ls.s), LaneSection::from(ls)))
+            .map(|ls| (OrderedFloat::<f64>::from(ls.s), LaneSection::from(ls)))
             .collect();
 
         let reference_line = r
             .plan_view
             .geometry
             .iter()
-            .map(|g| (OrderedFloat::<f32>::from(g.s), Geometry::from(g)))
+            .map(|g| (OrderedFloat::<f64>::from(g.s), Geometry::from(g)))
             .collect();
 
         Road {
@@ -82,7 +82,7 @@ impl From<&opendrive::road::Road> for Road {
 }
 
 impl Road {
-    pub fn interpolate(&self, s: OrderedFloat<f32>) -> (f32, f32, f32, f32) {
+    pub fn interpolate(&self, s: OrderedFloat<f64>) -> (f64, f64, f64, f64) {
         let geom = self.reference_line.range(..=s).next_back().unwrap().1;
         let (x, y, hdg) = geom.interpolate(*s - geom.s);
 
@@ -96,10 +96,10 @@ impl Road {
         (x, y, z, hdg)
     }
 
-    fn maxima(&self, s: OrderedFloat<f32>) -> [Vec3; 2] {
+    fn maxima(&self, s: OrderedFloat<f64>) -> [Vec3; 2] {
         let (x, neg_z, y, hdg) = self.interpolate(s);
-        let transform = Transform::from_xyz(x, y, -neg_z)
-            .with_rotation(Quat::from_axis_angle(Vec3::Y, hdg - PI * 0.5));
+        let transform = Transform::from_xyz(x as f32, y as f32, -neg_z as f32)
+            .with_rotation(Quat::from_axis_angle(Vec3::Y, (hdg - PI * 0.5) as f32));
 
         let (s_section, section) = self.sections.range(..=s).next_back().unwrap();
 
@@ -111,7 +111,7 @@ impl Road {
 
                 width.eval((s - s_section - s_width).0)
             })
-            .sum::<f32>();
+            .sum::<f64>();
 
         let right_point = section
             .right_lanes
@@ -121,10 +121,10 @@ impl Road {
 
                 width.eval((s - s_section - s_width).0)
             })
-            .sum::<f32>();
+            .sum::<f64>();
 
-        let left_point = transform.translation + transform.left() * left_point;
-        let right_point = transform.translation + transform.right() * right_point;
+        let left_point = transform.translation + transform.left() * left_point as f32;
+        let right_point = transform.translation + transform.right() * right_point as f32;
 
         [left_point, right_point]
     }
@@ -143,14 +143,14 @@ impl Meshable for Road {
                     let steps = g.length.round();
                     let step_size = g.length / steps;
                     (0..=steps as u32)
-                        .flat_map(|step| self.maxima(*s + step_size * step as f32))
+                        .flat_map(|step| self.maxima(*s + step_size * step as f64))
                         .collect::<Vec<Vec3>>()
                 }
                 GeometryType::Spiral { .. } => {
                     let steps = g.length.round();
                     let step_size = g.length / steps;
                     (0..=steps as u32)
-                        .flat_map(|step| self.maxima(*s + step_size * step as f32))
+                        .flat_map(|step| self.maxima(*s + step_size * step as f64))
                         .collect::<Vec<Vec3>>()
                 }
             })

@@ -7,7 +7,7 @@ pub struct Rule {
     /// s-coordinate of start position, relative to the position of the preceding `<laneSection>`
     /// element
     #[serde(rename = "@sOffset")]
-    pub s_offset: f32,
+    pub s_offset: f64,
     /// Free text; currently recommended values are
     /// - "no stopping at any time"
     /// - "disabled parking"

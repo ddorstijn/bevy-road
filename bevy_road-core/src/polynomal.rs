@@ -2,18 +2,18 @@ use ordered_float::Pow;
 
 #[derive(Debug)]
 pub struct Polynomal {
-    a: f32,
-    b: f32,
-    c: f32,
-    d: f32,
+    a: f64,
+    b: f64,
+    c: f64,
+    d: f64,
 }
 
 impl Polynomal {
-    pub fn new(a: f32, b: f32, c: f32, d: f32) -> Self {
+    pub fn new(a: f64, b: f64, c: f64, d: f64) -> Self {
         Self { a, b, c, d }
     }
 
-    pub fn eval(&self, s: f32) -> f32 {
+    pub fn eval(&self, s: f64) -> f64 {
         self.a + self.b * s + self.c * s.pow(2) + self.d * s.pow(3)
     }
 }

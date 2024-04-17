@@ -6,14 +6,14 @@ use serde::{Deserialize, Serialize};
 pub struct Material {
     /// Friction coefficient
     #[serde(rename = "@friction")]
-    pub friction: f32,
+    pub friction: f64,
     /// Roughness, for example, for sound and motion systems
     #[serde(rename = "@roughness")]
-    pub roughness: Option<f32>,
+    pub roughness: Option<f64>,
     /// s-coordinate of start position, relative to the position of the preceding `<laneSection>`
     /// element
     #[serde(rename = "@sOffset")]
-    pub s_offset: f32,
+    pub s_offset: f64,
     /// Surface material code, depending on application
     #[serde(rename = "@surface")]
     pub surface: Option<String>,

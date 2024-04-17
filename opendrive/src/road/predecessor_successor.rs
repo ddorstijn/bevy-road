@@ -22,7 +22,7 @@ pub struct PredecessorSuccessor {
     /// predecessor, meaning not at the start or end of the predecessor. Shall only be used for
     /// elementType "road"
     #[serde(rename = "@elementS")]
-    pub element_s: Option<f32>,
+    pub element_s: Option<f64>,
     /// Type of the linked element
     #[serde(rename = "@elementType")]
     pub element_type: Option<ElementType>,

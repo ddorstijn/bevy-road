@@ -12,7 +12,7 @@ pub struct RoadType {
     pub country: Option<String>,
     /// s-coordinate of start position
     #[serde(rename = "@s")]
-    pub s: f32,
+    pub s: f64,
     /// Type of the road defined as enumeration
     #[serde(rename = "@type")]
     pub r#type: RoadTypeE,

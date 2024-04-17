@@ -12,19 +12,19 @@ pub mod spiral;
 pub struct Geometry {
     /// Start orientation (inertial heading)
     #[serde(rename = "@hdg")]
-    pub hdg: f32,
+    pub hdg: f64,
     /// Length of the element's reference line
     #[serde(rename = "@length")]
-    pub length: f32,
+    pub length: f64,
     /// s-coordinate of start position
     #[serde(rename = "@s")]
-    pub s: f32,
+    pub s: f64,
     /// Start position (x inertial)
     #[serde(rename = "@x")]
-    pub x: f32,
+    pub x: f64,
     /// Start position (y inertial)
     #[serde(rename = "@y")]
-    pub y: f32,
+    pub y: f64,
 
     #[serde(flatten)]
     pub r#type: GeometryType,

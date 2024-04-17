@@ -9,9 +9,9 @@ pub struct Spiral {
     /// Curvature at the start of the element
     #[serde(rename = "@curvStart")]
     #[serde(deserialize_with = "deserialize_scientific")]
-    pub curvature_start: f32,
+    pub curvature_start: f64,
     /// Curvature at the end of the element
     #[serde(rename = "@curvEnd")]
     #[serde(deserialize_with = "deserialize_scientific")]
-    pub curvature_end: f32,
+    pub curvature_end: f64,
 }

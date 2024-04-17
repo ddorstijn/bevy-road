@@ -44,7 +44,7 @@ pub struct Road {
     /// considered.
     /// Only positive values are valid.
     #[serde(rename = "@length")]
-    pub length: f32,
+    pub length: f64,
     /// Name of the road. May be chosen freely.
     #[serde(rename = "@name")]
     pub name: Option<String>,

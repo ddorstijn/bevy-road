@@ -11,7 +11,7 @@ use crate::lane::right::Right;
 pub struct LaneSection {
     /// s-coordinate of start position
     #[serde(rename = "@s")]
-    pub s: f32,
+    pub s: f64,
     /// Lane section element is valid for one side only (left, center, or right), depending on the
     /// child elements.
     #[serde(rename = "@singleSide")]

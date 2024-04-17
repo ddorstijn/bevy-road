@@ -38,8 +38,8 @@ impl From<&opendrive::lane::lane_section::LaneSection> for LaneSection {
 
 #[derive(Debug, Default)]
 pub struct Lane {
-    pub width: BTreeMap<OrderedFloat<f32>, Polynomal>,
-    pub height: BTreeMap<OrderedFloat<f32>, (f32, f32)>,
+    pub width: BTreeMap<OrderedFloat<f64>, Polynomal>,
+    pub height: BTreeMap<OrderedFloat<f64>, (f64, f64)>,
     pub r#type: LaneType,
     pub predecessor: Option<i32>,
     pub successor: Option<i32>,
@@ -49,7 +49,7 @@ impl From<&opendrive::lane::Lane> for Lane {
     fn from(lane: &opendrive::lane::Lane) -> Self {
         let widths = BTreeMap::from_iter(lane.width.iter().map(|w| {
             (
-                OrderedFloat::<f32>::from(w.s_offset),
+                OrderedFloat::<f64>::from(w.s_offset),
                 Polynomal::new(w.a, w.b, w.c, w.d),
             )
         }));
@@ -57,7 +57,7 @@ impl From<&opendrive::lane::Lane> for Lane {
         let heights = BTreeMap::from_iter(
             lane.height
                 .iter()
-                .map(|h| (OrderedFloat::<f32>::from(h.s_offset), (h.inner, h.outer))),
+                .map(|h| (OrderedFloat::<f64>::from(h.s_offset), (h.inner, h.outer))),
         );
 
         Lane {
