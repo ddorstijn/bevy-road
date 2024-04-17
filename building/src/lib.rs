@@ -9,9 +9,9 @@ use bevy::{
 use bevy_road_core::geometry::{Geometry, GeometryType};
 use ordered_float::OrderedFloat;
 
-const CURVATURE: f64 = 5e-2;
+const CURVATURE: f64 = 5e-3;
 const RADIUS: f64 = 1.0 / CURVATURE;
-const L_S: f64 = 7.5;
+const L_S: f64 = 25.;
 
 pub struct BuilderPlugin;
 impl Plugin for BuilderPlugin {
@@ -21,10 +21,15 @@ impl Plugin for BuilderPlugin {
             .add_systems(
                 Update,
                 (
-                    // change_level,
+                    stop_spline
+                        .run_if(input_just_pressed(KeyCode::Escape))
+                        .after(update_point),
+                    change_level,
+                    change_radius.run_if(input_just_pressed(MouseButton::Middle)),
                     insert_point.run_if(input_just_pressed(MouseButton::Left)),
                     debug_spline_points,
                     display_spline,
+                    display_arc,
                     update_point.run_if(any_with_component::<ActiveSpline>),
                 ),
             )
@@ -38,8 +43,8 @@ fn spawn_curve(mut commands: Commands) {
         RoadSpline {
             points: vec![
                 DVec3::new(0.0, 0.0, 0.0),
-                DVec3::new(100.0, 0.0, 0.0),
-                DVec3::new(100.0, 0.0, 100.0),
+                DVec3::new(500.0, 0.0, 0.0),
+                DVec3::new(500.0, 0.0, 500.0),
             ],
             ..default()
         },
@@ -47,29 +52,108 @@ fn spawn_curve(mut commands: Commands) {
     ));
 }
 
+fn stop_spline(
+    mut active_spline: Query<(Entity, &mut RoadSpline), With<ActiveSpline>>,
+    mut commands: Commands,
+) {
+    for (entity, mut spline) in &mut active_spline {
+        if spline.points.len() < 2 {
+            commands.entity(entity).despawn();
+        } else {
+            spline.points.pop();
+            commands.entity(entity).remove::<ActiveSpline>();
+        }
+    }
+}
+
+fn change_radius(
+    primary_window: Query<&Window, With<PrimaryWindow>>,
+    main_camera: Query<(&Camera, &GlobalTransform)>,
+    mut active_spline: Query<(Entity, &mut RoadSpline), With<ActiveSpline>>,
+) {
+    let Some(cursor_position) = primary_window.single().cursor_position() else {
+        return;
+    };
+
+    let (camera, camera_transform) = main_camera.single();
+    let Some(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
+        return;
+    };
+
+    let p = ray.get_point(-ray.origin.y / ray.direction.y);
+    let p = DVec2::new(p.x as f64, -p.z as f64);
+
+    for (_, spline) in &mut active_spline {
+        spline.geometry.values().for_each(|g| match g.r#type {
+            GeometryType::Arc { mut k } => {
+                let radius = k.recip();
+                let recipient = g.hdg + std::f64::consts::PI / 2.0;
+
+                let (sin_hdg, cos_hdg) = recipient.sin_cos();
+                let x = g.x + cos_hdg * radius;
+                let y = g.y + sin_hdg * radius;
+                let center = DVec2::new(x, y);
+
+                println!("Checking arc: {}, {}", center, p);
+                if center.distance_squared(p) < radius.powi(2) {
+                    println!("Within distance");
+                    // k = k - 0.1;
+                }
+            }
+            _ => (),
+        })
+    }
+}
+
+fn display_arc(splines: Query<&RoadSpline>, mut gizmos: Gizmos) {
+    for spline in &splines {
+        spline.geometry.values().for_each(|g| match g.r#type {
+            GeometryType::Arc { k } => {
+                let radius = k.recip();
+                let recipient = g.hdg + std::f64::consts::PI / 2.0;
+
+                let (sin_hdg, cos_hdg) = recipient.sin_cos();
+                let x = g.x + cos_hdg * radius;
+                let y = g.y + sin_hdg * radius;
+                let center = Vec3::new(x as f32, 0.0, -y as f32);
+
+                gizmos.circle(center, Direction3d::Y, 0.1, Color::PINK);
+                gizmos.circle(center, Direction3d::Y, radius as f32, Color::ORANGE);
+            }
+            _ => (),
+        })
+    }
+}
+
 fn display_spline(splines: Query<&RoadSpline>, mut gizmos: Gizmos) {
     for spline in &splines {
-        let mut positions: Vec<Vec3> = spline
-            .geometry
-            .values()
-            .flat_map(|g| match g.r#type {
-                GeometryType::Line => vec![Vec3::new(g.x as f32, 0.0, -g.y as f32)],
-                _ => {
-                    let steps = g.length.ceil() * 10.;
-                    let step_size = g.length / steps;
-                    (0..=steps as u32)
-                        .map(|step| {
-                            let (x, y, _) = g.interpolate(step_size * step as f64);
-                            Vec3::new(x as f32, 0.0, -y as f32)
-                        })
-                        .collect::<Vec<Vec3>>()
-                }
-            })
-            .collect();
+        spline.geometry.values().for_each(|g| match g.r#type {
+            GeometryType::Line => {
+                let (x, y, _) = g.interpolate(g.length);
+                let start = Vec3::new(g.x as f32, 0.0, -g.y as f32);
+                let end = Vec3::new(x as f32, 0.0, -y as f32);
+                gizmos.line(start, end, Color::CYAN);
+            }
+            _ => {
+                let steps = g.length.ceil() * 10.;
+                let step_size = g.length / steps;
+                let positions = (0..=steps as u32)
+                    .map(|step| {
+                        let (x, y, _) = g.interpolate(step_size * step as f64);
+                        Vec3::new(x as f32, 0.0, -y as f32)
+                    })
+                    .collect::<Vec<Vec3>>();
 
-        let last_point = spline.points.last().unwrap();
-        positions.push(Vec3::new(last_point.x as f32, 0.0, last_point.z as f32));
-        gizmos.linestrip(positions, Color::CYAN);
+                gizmos.linestrip(
+                    positions,
+                    match g.r#type {
+                        GeometryType::Arc { .. } => Color::RED,
+                        GeometryType::Spiral { .. } => Color::GREEN,
+                        GeometryType::Line => unreachable!(),
+                    },
+                )
+            }
+        });
     }
 }
 
@@ -210,15 +294,15 @@ impl RoadSpline {
     }
 }
 
-// fn change_level(mut elevation: ResMut<Elevation>, keys: Res<ButtonInput<KeyCode>>) {
-//     if keys.pressed(KeyCode::NumpadAdd) {
-//         elevation.0 += 1.;
-//     }
+fn change_level(mut elevation: ResMut<Elevation>, keys: Res<ButtonInput<KeyCode>>) {
+    if keys.pressed(KeyCode::NumpadAdd) {
+        elevation.0 += 1.;
+    }
 
-//     if keys.pressed(KeyCode::NumpadSubtract) {
-//         elevation.0 -= 1.;
-//     }
-// }
+    if keys.pressed(KeyCode::NumpadSubtract) {
+        elevation.0 -= 1.;
+    }
+}
 
 fn update_point(
     primary_window: Query<&Window, With<PrimaryWindow>>,
