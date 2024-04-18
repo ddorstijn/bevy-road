@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use bevy::{
-    input::common_conditions::input_just_pressed,
+    input::common_conditions::{input_just_pressed, input_pressed},
     math::{DVec2, DVec3},
     prelude::*,
     window::PrimaryWindow,
@@ -21,7 +21,7 @@ impl Plugin for BuilderPlugin {
                         .run_if(input_just_pressed(KeyCode::Escape))
                         .after(update_point),
                     change_level,
-                    change_radius.run_if(input_just_pressed(MouseButton::Middle)),
+                    change_radius.run_if(input_pressed(MouseButton::Middle)),
                     insert_point.run_if(input_just_pressed(MouseButton::Left)),
                     debug_spline_points,
                     display_spline,
@@ -71,7 +71,8 @@ fn stop_spline(
 fn change_radius(
     primary_window: Query<&Window, With<PrimaryWindow>>,
     main_camera: Query<(&Camera, &GlobalTransform)>,
-    mut active_spline: Query<(Entity, &mut RoadSpline), With<ActiveSpline>>,
+    mut splines: Query<&mut RoadSpline>,
+    keys: Res<ButtonInput<KeyCode>>,
 ) {
     let Some(cursor_position) = primary_window.single().cursor_position() else {
         return;
@@ -83,27 +84,19 @@ fn change_radius(
     };
 
     let p = ray.get_point(-ray.origin.y / ray.direction.y);
-    let p = DVec2::new(p.x as f64, -p.z as f64);
+    let p = DVec3::from(p);
 
-    for (_, spline) in &mut active_spline {
-        spline.geometry.values().for_each(|g| match g.r#type {
-            GeometryType::Arc { k } => {
-                let radius = k.recip();
-                let recipient = g.hdg + std::f64::consts::PI / 2.0;
-
-                let (sin_hdg, cos_hdg) = recipient.sin_cos();
-                let x = g.x + cos_hdg * radius;
-                let y = g.y + sin_hdg * radius;
-                let center = DVec2::new(x, y);
-
-                println!("Checking arc: {}, {}", center, p);
-                if center.distance_squared(p) < radius.powi(2) {
-                    println!("Within distance");
-                    // k = k - 0.1;
-                }
+    for mut spline in &mut splines {
+        if let Some(point) = spline
+            .points
+            .iter_mut()
+            .find(|point| point.position.distance_squared(p) < 10.0)
+        {
+            match keys.pressed(KeyCode::ShiftLeft) {
+                true => point.radius += 1.0,
+                false => point.radius -= 1.0,
             }
-            _ => (),
-        })
+        }
     }
 }
 
